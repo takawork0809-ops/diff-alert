@@ -29,6 +29,10 @@ from rakuten_scraper import _apply_stealth, USER_AGENT, STOCK_IN, STOCK_OUT, STO
 
 SOLD_OUT = "売り切れ"
 
+# ボット検知ページ等から無関係な小さい数字を「価格」として誤抽出してしまうことがあるため、
+# この金額未満は現実的なAmazon価格としてありえないとみなし、取得失敗として扱う。
+MIN_PLAUSIBLE_PRICE = 100
+
 
 @dataclass
 class AmazonProduct:
@@ -151,12 +155,11 @@ async def _extract_price(page: Page) -> Optional[int]:
         except (PlaywrightTimeoutError, Exception):
             continue
 
-    # 最終フォールバック: ページ全体のテキストから正規表現で検索
-    try:
-        body_text = await page.locator("body").inner_text(timeout=5000)
-        return _parse_price(body_text)
-    except Exception:
-        return None
+    # 注意: 以前はここでページ全体のテキストを正規表現検索する最終フォールバックがあったが、
+    # ボット検知ページ等の無関係な数字(ポイント表示や関連商品の価格断片など)を price
+    # として誤抽出する原因になっていたため廃止した。価格セレクタで見つからない場合は
+    # 「取得失敗」として扱う方が安全。
+    return None
 
 
 async def _extract_stock_status(page: Page) -> str:
@@ -242,6 +245,12 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
             errors = []
             if not result.product_name:
                 errors.append("商品名を特定できませんでした。")
+            if result.price is not None and result.price < MIN_PLAUSIBLE_PRICE:
+                # ボット検知ページ等からの誤抽出とみなし、価格を無効化する。
+                errors.append(
+                    f"取得した価格(¥{result.price})が不自然に低いため、誤抽出(ボット検知ページ等)の可能性があり無効化しました。"
+                )
+                result.price = None
             if result.price is None:
                 errors.append("価格を特定できませんでした。")
             if errors:
