@@ -136,13 +136,17 @@ async def _extract_product_name(page: Page) -> Optional[str]:
 
 
 async def _extract_price(page: Page) -> Optional[int]:
+    # 「買い物かご(バイボックス)」領域に限定したセレクタのみを使う。
+    # 過去に汎用的な ".a-price .a-offscreen" (ページ内のどの価格要素にも一致してしまう)
+    # を含めていたところ、関連商品・よく一緒に購入されている商品・クーポン等の
+    # 無関係な価格を誤って本体価格として抽出する不具合があったため、
+    # 買い物かご周辺の要素だけに絞り込んでいる。
     for selector in (
         "#corePrice_feature_div .a-price .a-offscreen",
-        ".apexPriceToPay .a-offscreen",
         "#corePriceDisplay_desktop_feature_div .a-price .a-offscreen",
+        ".apexPriceToPay .a-offscreen",
         "#priceblock_ourprice",
         "#priceblock_dealprice",
-        ".a-price .a-offscreen",
     ):
         try:
             locator = page.locator(selector).first
@@ -155,10 +159,9 @@ async def _extract_price(page: Page) -> Optional[int]:
         except (PlaywrightTimeoutError, Exception):
             continue
 
-    # 注意: 以前はここでページ全体のテキストを正規表現検索する最終フォールバックがあったが、
-    # ボット検知ページ等の無関係な数字(ポイント表示や関連商品の価格断片など)を price
-    # として誤抽出する原因になっていたため廃止した。価格セレクタで見つからない場合は
-    # 「取得失敗」として扱う方が安全。
+    # 上記の買い物かご限定セレクタで見つからない場合は「取得失敗」として扱う。
+    # ページ全体を正規表現検索する広いフォールバックは、無関係な数字を誤抽出する
+    # 原因になるため使わない。
     return None
 
 
