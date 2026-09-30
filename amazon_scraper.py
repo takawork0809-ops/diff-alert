@@ -257,6 +257,16 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
             if result.price is None:
                 errors.append("価格を特定できませんでした。")
             if errors:
+                # 原因調査用の簡易診断情報(実際にサーバーへ何が返ってきているか)を付与する。
+                try:
+                    diag_title = await page.title()
+                    diag_status = response.status if response is not None else "?"
+                    diag_snippet = (await page.locator("body").inner_text(timeout=3000))[:120].replace("\n", " ")
+                    errors.append(
+                        f"[診断] status={diag_status} title={diag_title!r} body先頭={diag_snippet!r}"
+                    )
+                except Exception:
+                    pass
                 result.error = " ".join(errors)
 
             result.success = bool(result.product_name and result.price is not None)
