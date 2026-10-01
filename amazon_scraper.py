@@ -269,12 +269,24 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                 errors.append("価格を特定できませんでした。")
             if errors:
                 # 原因調査用の簡易診断情報(実際にサーバーへ何が返ってきているか)を付与する。
+                # 本文冒頭(ナビゲーション文言)だけでは手がかりが薄いため、"¥"を含む
+                # 箇所があればその前後も合わせて抜き出す。
                 try:
                     diag_title = await page.title()
                     diag_status = response.status if response is not None else "?"
-                    diag_snippet = (await page.locator("body").inner_text(timeout=3000))[:120].replace("\n", " ")
+                    body_text = await page.locator("body").inner_text(timeout=3000)
+                    diag_head = body_text[:100].replace("\n", " ")
+                    yen_idx = body_text.find("¥")
+                    diag_yen = (
+                        body_text[max(0, yen_idx - 30) : yen_idx + 30].replace("\n", " ")
+                        if yen_idx != -1
+                        else "(¥を含む箇所なし)"
+                    )
+                    price_el_count = await page.locator(".a-price .a-offscreen").count()
                     errors.append(
-                        f"[診断] status={diag_status} title={diag_title!r} body先頭={diag_snippet!r}"
+                        f"[診断] status={diag_status} title={diag_title!r} "
+                        f"body先頭={diag_head!r} ¥周辺={diag_yen!r} "
+                        f".a-price要素数={price_el_count}"
                     )
                 except Exception:
                     pass

@@ -31,6 +31,14 @@ import csv
 import os
 import sys
 
+# コンテナ環境(Railway等)で標準出力がブロックバッファリングされ、ログが
+# リアルタイムに出ず「ハングしているように見える」ことがあるため、
+# 行バッファリングに強制する。
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
 import resend
 from dotenv import load_dotenv
 from supabase import create_client
