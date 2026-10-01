@@ -284,6 +284,8 @@ async def scrape_rakuten_item(url: str, headless: bool = True, timeout_ms: int =
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--disable-dev-shm-usage",
+                    "--no-sandbox",
+                    "--disable-gpu",
                 ],
             )
             context = await browser.new_context(

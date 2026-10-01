@@ -61,11 +61,41 @@ async def scrape_rakuten(url: str, headless: bool = True) -> dict:
     return result.to_dict()
 
 
+# Playwright/Chromiumがコンテナ環境でハングした場合に全体が止まらないようにする
+# 外側の強制タイムアウト。個々のPlaywright操作のtimeoutが機能しない異常時の保険。
+HARD_TIMEOUT_SECONDS = 90
+
+
+async def _scrape_amazon_safe(asin: str, headless: bool) -> dict:
+    try:
+        return await asyncio.wait_for(scrape_amazon(asin, headless=headless), timeout=HARD_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        return {
+            "asin": asin,
+            "product_name": None,
+            "price": None,
+            "success": False,
+            "error": f"{HARD_TIMEOUT_SECONDS}秒経過してもハングしたため強制終了しました。",
+        }
+
+
+async def _scrape_rakuten_safe(url: str, headless: bool) -> dict:
+    try:
+        return await asyncio.wait_for(scrape_rakuten(url, headless=headless), timeout=HARD_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        return {
+            "product_name": None,
+            "price": None,
+            "success": False,
+            "error": f"{HARD_TIMEOUT_SECONDS}秒経過してもハングしたため強制終了しました。",
+        }
+
+
 async def _scrape_both(asin: str, rakuten_url: str, headless: bool) -> tuple[dict, dict]:
     # Amazon/楽天のブラウザを同時に立ち上げるとリソース競合で片方の取得が不安定になることがあるため、
     # 並列(gather)ではなく逐次実行にしてブラウザ間の干渉を避ける。
-    amazon_result = await scrape_amazon(asin, headless=headless)
-    rakuten_result = await scrape_rakuten(rakuten_url, headless=headless)
+    amazon_result = await _scrape_amazon_safe(asin, headless)
+    rakuten_result = await _scrape_rakuten_safe(rakuten_url, headless)
     return amazon_result, rakuten_result
 
 

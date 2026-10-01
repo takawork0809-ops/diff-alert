@@ -205,6 +205,8 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--disable-dev-shm-usage",
+                    "--no-sandbox",
+                    "--disable-gpu",
                 ],
             )
             context = await browser.new_context(
