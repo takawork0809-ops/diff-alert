@@ -221,7 +221,16 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
 
             try:
                 response = await page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
-                await page.wait_for_timeout(1500)  # 動的コンテンツの描画待ち
+                # 固定で1.5秒待つだけだと、CPUが遅い実行環境(Railway等)では価格欄の
+                # 描画がまだ終わっていないことがあるため、価格欄 or 商品タイトルが
+                # 実際に現れるまで(最大8秒)待ってから、念のため少し追加で待つ。
+                try:
+                    await page.wait_for_selector(
+                        "#corePrice_feature_div, #productTitle", timeout=8000
+                    )
+                except PlaywrightTimeoutError:
+                    pass
+                await page.wait_for_timeout(1000)
             except PlaywrightTimeoutError:
                 result.error = f"ページ読み込みがタイムアウトしました ({timeout_ms}ms)"
                 return result.to_dict()
