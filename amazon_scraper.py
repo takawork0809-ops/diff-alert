@@ -136,11 +136,7 @@ async def _extract_product_name(page: Page) -> Optional[str]:
 
 
 async def _extract_price(page: Page) -> Optional[int]:
-    # 「買い物かご(バイボックス)」領域に限定したセレクタのみを使う。
-    # 過去に汎用的な ".a-price .a-offscreen" (ページ内のどの価格要素にも一致してしまう)
-    # を含めていたところ、関連商品・よく一緒に購入されている商品・クーポン等の
-    # 無関係な価格を誤って本体価格として抽出する不具合があったため、
-    # 買い物かご周辺の要素だけに絞り込んでいる。
+    # 「買い物かご(バイボックス)」領域に限定したセレクタをまず試す。
     for selector in (
         "#corePrice_feature_div .a-price .a-offscreen",
         "#corePriceDisplay_desktop_feature_div .a-price .a-offscreen",
@@ -159,9 +155,23 @@ async def _extract_price(page: Page) -> Optional[int]:
         except (PlaywrightTimeoutError, Exception):
             continue
 
-    # 上記の買い物かご限定セレクタで見つからない場合は「取得失敗」として扱う。
-    # ページ全体を正規表現検索する広いフォールバックは、無関係な数字を誤抽出する
-    # 原因になるため使わない。
+    # 上記の特定ID/クラスに一致しない場合(Amazon側のレイアウト変更等)のフォールバック。
+    # ヘッダー/フッター/サイドバーの関連商品等を含まない商品詳細領域(#ppd)に絞った上で、
+    # その中で最初に現れる価格要素を採用する。最後の手段として、絞り込みすらできない
+    # 場合はページ全体の最初の価格要素を使う(関連商品等を誤って拾うリスクはあるが、
+    # MIN_PLAUSIBLE_PRICEによる妥当性チェックと併用することで許容する)。
+    for selector in ("#ppd .a-price .a-offscreen", ".a-price .a-offscreen"):
+        try:
+            locator = page.locator(selector).first
+            if await locator.count() == 0:
+                continue
+            text = await locator.inner_text(timeout=3000)
+            price = _parse_price(text)
+            if price:
+                return price
+        except (PlaywrightTimeoutError, Exception):
+            continue
+
     return None
 
 
