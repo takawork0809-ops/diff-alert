@@ -155,22 +155,11 @@ async def _extract_price(page: Page) -> Optional[int]:
         except (PlaywrightTimeoutError, Exception):
             continue
 
-    # 上記の特定ID/クラスに一致しない場合(Amazon側のレイアウト変更等)のフォールバック。
-    # ヘッダー/フッター/サイドバーの関連商品等を含まない商品詳細領域(#ppd)に絞った上で、
-    # その中で最初に現れる価格要素を採用する。最後の手段として、絞り込みすらできない
-    # 場合はページ全体の最初の価格要素を使う(関連商品等を誤って拾うリスクはあるが、
-    # MIN_PLAUSIBLE_PRICEによる妥当性チェックと併用することで許容する)。
-    for selector in ("#ppd .a-price .a-offscreen", ".a-price .a-offscreen"):
-        try:
-            locator = page.locator(selector).first
-            if await locator.count() == 0:
-                continue
-            text = await locator.inner_text(timeout=3000)
-            price = _parse_price(text)
-            if price:
-                return price
-        except (PlaywrightTimeoutError, Exception):
-            continue
+    # 注意: 以前はここに "#ppd .a-price .a-offscreen" や ".a-price .a-offscreen" を
+    # 広めのフォールバックとして使っていたが、関連商品/おすすめ商品等の無関係な価格
+    # (本体価格と無関係だが¥100以上で"もっともらしく見える"値)を誤って拾う事例が
+    # 複数回確認されたため廃止した。間違った価格を保存・通知するリスクの方が、
+    # 取得失敗として諦めるリスクより大きいと判断し、安全側に倒している。
 
     return None
 
@@ -292,11 +281,20 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                         if yen_idx != -1
                         else "(¥を含む箇所なし)"
                     )
-                    price_el_count = await page.locator(".a-price .a-offscreen").count()
+                    price_locator = page.locator(".a-price .a-offscreen")
+                    price_el_count = await price_locator.count()
+                    # 候補の価格テキストを先頭から最大8個並べて記録する。
+                    # どのインデックスが本体価格なのかを特定するための手がかりにする。
+                    candidates = []
+                    for i in range(min(price_el_count, 8)):
+                        try:
+                            candidates.append(await price_locator.nth(i).inner_text(timeout=1000))
+                        except Exception:
+                            candidates.append("?")
                     errors.append(
                         f"[診断] status={diag_status} title={diag_title!r} "
                         f"body先頭={diag_head!r} ¥周辺={diag_yen!r} "
-                        f".a-price要素数={price_el_count}"
+                        f".a-price要素数={price_el_count} 候補={candidates!r}"
                     )
                 except Exception:
                     pass
