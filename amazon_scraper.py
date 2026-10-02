@@ -193,104 +193,6 @@ async def _extract_stock_status(page: Page) -> str:
     return STOCK_UNKNOWN
 
 
-async def _set_japan_delivery(page: Page) -> str:
-    """お届け先を日本(東京の郵便番号)に設定する。失敗しても処理は続行する。
-
-    海外IPだとお届け先が海外扱いになり、一部商品で買い物かごの価格欄が表示されないため、
-    画面上のお届け先変更UIで日本の郵便番号を入力しておく。
-    戻り値は診断用の結果文字列(どのステップで止まったか/設定後のお届け先)。
-    """
-    step = "goto"
-    try:
-        await page.goto("https://www.amazon.co.jp/", timeout=20000, wait_until="domcontentloaded")
-        step = "open-popover"
-        # 遅い環境ではボタンのJS処理の準備が終わる前にクリックしても反応しないため、
-        # ページの読み込み完了を待ち、ポップアップが開くまで最大3回クリックし直す。
-        await page.wait_for_selector("#nav-global-location-popover-link", timeout=10000)
-        try:
-            await page.wait_for_load_state("load", timeout=15000)
-        except Exception:
-            pass
-        await page.wait_for_timeout(2000)
-        opened = False
-        for _ in range(3):
-            await page.locator("#nav-global-location-popover-link").click(timeout=8000)
-            step = "wait-zip-input"
-            try:
-                await page.wait_for_selector("#GLUXZipUpdateInput_0, #GLUXZipUpdateInput", timeout=8000)
-                opened = True
-                break
-            except Exception:
-                await page.keyboard.press("Escape")
-                await page.wait_for_timeout(1500)
-        if not opened:
-            raise TimeoutError("popover did not open")
-        step = "select-country"
-        country_info = ""
-        try:
-            info = await page.evaluate(
-                """() => {
-                    const sel = document.querySelector('#GLUXCountryList');
-                    if (!sel) return null;
-                    return {value: sel.value, hasJP: Array.from(sel.options).some(o => o.value === 'JP')};
-                }"""
-            )
-            country_info = str(info)
-            if info and info.get("hasJP") and info.get("value") != "JP":
-                await page.locator("#GLUXCountryList").select_option("JP", timeout=3000)
-                await page.wait_for_timeout(1500)
-        except Exception as ce:
-            country_info = f"country-err:{type(ce).__name__}"
-        step = "fill-zip"
-        if await page.locator("#GLUXZipUpdateInput_0").count():
-            await page.locator("#GLUXZipUpdateInput_0").fill("100", timeout=5000)
-            await page.locator("#GLUXZipUpdateInput_1").fill("0001", timeout=5000)
-        else:
-            await page.locator("#GLUXZipUpdateInput").fill("100-0001", timeout=5000)
-        step = "submit-zip"
-        await page.locator("#GLUXZipUpdate").click(timeout=5000)
-        await page.wait_for_timeout(2500)
-        step = "confirm"
-        for sel in ("#GLUXConfirmClose", ".a-popover-footer button", "[name='glowDoneButton']"):
-            btn = page.locator(sel).first
-            if await btn.count() and await btn.is_visible():
-                await btn.click(timeout=3000)
-                break
-        await page.wait_for_timeout(1500)
-        step = "verify"
-        await page.reload(timeout=20000, wait_until="domcontentloaded")
-        await page.wait_for_timeout(1500)
-        loc = (await page.locator("#glow-ingress-block").inner_text(timeout=5000)).replace("\n", " ")
-        extra = await page.evaluate(
-            """() => {
-                const vis = e => e && e.offsetParent !== null;
-                const err = Array.from(document.querySelectorAll('#GLUXZipError, #GLUXZipServerError'))
-                    .filter(vis).map(e => e.innerText.trim().slice(0, 80));
-                const pop = document.querySelector('.a-popover-content, #GLUXContent');
-                return JSON.stringify({err: err, popup: pop ? pop.innerText.slice(0, 140).replace(/\\n/g, ' ') : null,
-                    zip: [(document.querySelector('#GLUXZipUpdateInput_0')||{}).value,
-                          (document.querySelector('#GLUXZipUpdateInput_1')||{}).value]});
-            }"""
-        )
-        return f"ok:{loc} country={country_info} {extra}"
-    except Exception as e:
-        detail = ""
-        try:
-            detail = await page.evaluate(
-                """() => {
-                    const c = document.querySelector('.a-popover-content, #GLUXContent, .a-popover');
-                    const ids = Array.from(document.querySelectorAll('[id^=GLUX]'))
-                        .filter(e => e.offsetParent !== null).map(e => e.id).slice(0, 15);
-                    const sel = document.querySelector('#GLUXCountryList');
-                    return JSON.stringify({text: c ? c.innerText.slice(0, 160) : null, visibleIds: ids,
-                        country: sel ? sel.value : null});
-                }"""
-            )
-        except Exception:
-            pass
-        return f"fail@{step}:{type(e).__name__} {detail}"
-
-
 async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 30000) -> dict:
     """
     Amazon.co.jp の商品ページから商品名・Amazon価格(税込)・在庫状況を取得する。
@@ -339,8 +241,6 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                     await route.continue_()
 
             await page.route("**/*", _block_heavy)
-
-            delivery_setup = await _set_japan_delivery(page)
 
             try:
                 response = await page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
@@ -420,7 +320,7 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                     except Exception:
                         diag_loc = "?"
                     errors.append(
-                        f"[診断] 配送設定={delivery_setup} お届け先={diag_loc!r} status={diag_status} title={diag_title!r} "
+                        f"[診断] お届け先={diag_loc!r} status={diag_status} title={diag_title!r} "
                         f"body先頭={diag_head!r} ¥周辺={diag_yen!r} "
                         f".a-price要素数={price_el_count} 候補={candidates!r}"
                     )
