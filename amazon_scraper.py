@@ -193,32 +193,42 @@ async def _extract_stock_status(page: Page) -> str:
     return STOCK_UNKNOWN
 
 
-async def _set_japan_delivery(page: Page) -> None:
+async def _set_japan_delivery(page: Page) -> str:
     """お届け先を日本(東京の郵便番号)に設定する。失敗しても処理は続行する。
 
     海外IPだとお届け先が海外扱いになり、一部商品で買い物かごの価格欄が表示されないため、
     画面上のお届け先変更UIで日本の郵便番号を入力しておく。
+    戻り値は診断用の結果文字列(どのステップで止まったか/設定後のお届け先)。
     """
+    step = "goto"
     try:
         await page.goto("https://www.amazon.co.jp/", timeout=20000, wait_until="domcontentloaded")
+        step = "open-popover"
+        await page.wait_for_selector("#nav-global-location-popover-link", timeout=10000)
         await page.locator("#nav-global-location-popover-link").click(timeout=8000)
-        await page.wait_for_selector("#GLUXZipUpdateInput_0, #GLUXZipUpdateInput", timeout=8000)
+        step = "wait-zip-input"
+        await page.wait_for_selector("#GLUXZipUpdateInput_0, #GLUXZipUpdateInput", timeout=10000)
+        step = "fill-zip"
         if await page.locator("#GLUXZipUpdateInput_0").count():
             await page.locator("#GLUXZipUpdateInput_0").fill("100", timeout=5000)
             await page.locator("#GLUXZipUpdateInput_1").fill("0001", timeout=5000)
         else:
             await page.locator("#GLUXZipUpdateInput").fill("100-0001", timeout=5000)
+        step = "submit-zip"
         await page.locator("#GLUXZipUpdate").click(timeout=5000)
-        await page.wait_for_timeout(1500)
-        # 確定後に出る「続行」ボタン(あれば)を押す
+        await page.wait_for_timeout(2500)
+        step = "confirm"
         for sel in ("#GLUXConfirmClose", ".a-popover-footer button", "[name='glowDoneButton']"):
             btn = page.locator(sel).first
             if await btn.count() and await btn.is_visible():
                 await btn.click(timeout=3000)
                 break
-        await page.wait_for_timeout(1000)
-    except Exception:
-        pass
+        await page.wait_for_timeout(1500)
+        step = "verify"
+        loc = (await page.locator("#glow-ingress-block").inner_text(timeout=3000)).replace("\n", " ")
+        return f"ok:{loc}"
+    except Exception as e:
+        return f"fail@{step}:{type(e).__name__}"
 
 
 async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 30000) -> dict:
@@ -270,7 +280,7 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
 
             await page.route("**/*", _block_heavy)
 
-            await _set_japan_delivery(page)
+            delivery_setup = await _set_japan_delivery(page)
 
             try:
                 response = await page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
@@ -350,7 +360,7 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                     except Exception:
                         diag_loc = "?"
                     errors.append(
-                        f"[診断] お届け先={diag_loc!r} status={diag_status} title={diag_title!r} "
+                        f"[診断] 配送設定={delivery_setup} お届け先={diag_loc!r} status={diag_status} title={diag_title!r} "
                         f"body先頭={diag_head!r} ¥周辺={diag_yen!r} "
                         f".a-price要素数={price_el_count} 候補={candidates!r}"
                     )
