@@ -243,7 +243,18 @@ async def _set_japan_delivery(page: Page) -> str:
         await page.wait_for_timeout(1500)
         step = "verify"
         loc = (await page.locator("#glow-ingress-block").inner_text(timeout=3000)).replace("\n", " ")
-        return f"ok:{loc}"
+        extra = await page.evaluate(
+            """() => {
+                const vis = e => e && e.offsetParent !== null;
+                const err = Array.from(document.querySelectorAll('#GLUXZipError, #GLUXZipServerError'))
+                    .filter(vis).map(e => e.innerText.trim().slice(0, 80));
+                const pop = document.querySelector('.a-popover-content, #GLUXContent');
+                return JSON.stringify({err: err, popup: pop ? pop.innerText.slice(0, 140).replace(/\\n/g, ' ') : null,
+                    zip: [(document.querySelector('#GLUXZipUpdateInput_0')||{}).value,
+                          (document.querySelector('#GLUXZipUpdateInput_1')||{}).value]});
+            }"""
+        )
+        return f"ok:{loc} {extra}"
     except Exception as e:
         detail = ""
         try:
