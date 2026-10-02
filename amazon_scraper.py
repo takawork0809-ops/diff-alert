@@ -225,6 +225,22 @@ async def _set_japan_delivery(page: Page) -> str:
                 await page.wait_for_timeout(1500)
         if not opened:
             raise TimeoutError("popover did not open")
+        step = "select-country"
+        country_info = ""
+        try:
+            info = await page.evaluate(
+                """() => {
+                    const sel = document.querySelector('#GLUXCountryList');
+                    if (!sel) return null;
+                    return {value: sel.value, hasJP: Array.from(sel.options).some(o => o.value === 'JP')};
+                }"""
+            )
+            country_info = str(info)
+            if info and info.get("hasJP") and info.get("value") != "JP":
+                await page.locator("#GLUXCountryList").select_option("JP", timeout=3000)
+                await page.wait_for_timeout(1500)
+        except Exception as ce:
+            country_info = f"country-err:{type(ce).__name__}"
         step = "fill-zip"
         if await page.locator("#GLUXZipUpdateInput_0").count():
             await page.locator("#GLUXZipUpdateInput_0").fill("100", timeout=5000)
@@ -242,7 +258,9 @@ async def _set_japan_delivery(page: Page) -> str:
                 break
         await page.wait_for_timeout(1500)
         step = "verify"
-        loc = (await page.locator("#glow-ingress-block").inner_text(timeout=3000)).replace("\n", " ")
+        await page.reload(timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(1500)
+        loc = (await page.locator("#glow-ingress-block").inner_text(timeout=5000)).replace("\n", " ")
         extra = await page.evaluate(
             """() => {
                 const vis = e => e && e.offsetParent !== null;
@@ -254,7 +272,7 @@ async def _set_japan_delivery(page: Page) -> str:
                           (document.querySelector('#GLUXZipUpdateInput_1')||{}).value]});
             }"""
         )
-        return f"ok:{loc} {extra}"
+        return f"ok:{loc} country={country_info} {extra}"
     except Exception as e:
         detail = ""
         try:
