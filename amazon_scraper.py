@@ -204,10 +204,27 @@ async def _set_japan_delivery(page: Page) -> str:
     try:
         await page.goto("https://www.amazon.co.jp/", timeout=20000, wait_until="domcontentloaded")
         step = "open-popover"
+        # 遅い環境ではボタンのJS処理の準備が終わる前にクリックしても反応しないため、
+        # ページの読み込み完了を待ち、ポップアップが開くまで最大3回クリックし直す。
         await page.wait_for_selector("#nav-global-location-popover-link", timeout=10000)
-        await page.locator("#nav-global-location-popover-link").click(timeout=8000)
-        step = "wait-zip-input"
-        await page.wait_for_selector("#GLUXZipUpdateInput_0, #GLUXZipUpdateInput", timeout=10000)
+        try:
+            await page.wait_for_load_state("load", timeout=15000)
+        except Exception:
+            pass
+        await page.wait_for_timeout(2000)
+        opened = False
+        for _ in range(3):
+            await page.locator("#nav-global-location-popover-link").click(timeout=8000)
+            step = "wait-zip-input"
+            try:
+                await page.wait_for_selector("#GLUXZipUpdateInput_0, #GLUXZipUpdateInput", timeout=8000)
+                opened = True
+                break
+            except Exception:
+                await page.keyboard.press("Escape")
+                await page.wait_for_timeout(1500)
+        if not opened:
+            raise TimeoutError("popover did not open")
         step = "fill-zip"
         if await page.locator("#GLUXZipUpdateInput_0").count():
             await page.locator("#GLUXZipUpdateInput_0").fill("100", timeout=5000)
