@@ -298,6 +298,16 @@ async def scrape_rakuten_item(url: str, headless: bool = True, timeout_ms: int =
             page = await context.new_page()
             await _apply_stealth(page)
 
+            # 画像・動画・フォントは価格取得に不要で、メモリの少ないコンテナでの
+            # ページクラッシュ防止にもなるため読み込まない。
+            async def _block_heavy(route):
+                if route.request.resource_type in ("image", "media", "font"):
+                    await route.abort()
+                else:
+                    await route.continue_()
+
+            await page.route("**/*", _block_heavy)
+
             try:
                 await page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
                 await page.wait_for_timeout(1500)  # 動的コンテンツの描画待ち
