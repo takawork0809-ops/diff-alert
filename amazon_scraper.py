@@ -52,6 +52,10 @@ class AmazonProduct:
 def _parse_price(text: str) -> Optional[int]:
     if not text:
         return None
+    # 円表記以外(USD等)は受け付けない。海外IPからアクセスするとAmazon.co.jpが
+    # "USD15.37" のようにドル表示になり、数字の先頭だけ拾うと別物の価格になるため。
+    if not any(sym in text for sym in ("¥", "￥", "円")):
+        return None
     match = re.search(r"[\d,]+", text)
     if match:
         try:
@@ -102,7 +106,8 @@ async def _extract_from_jsonld(page: Page) -> dict:
                 offers = offers[0] if offers else None
             if isinstance(offers, dict):
                 price = offers.get("price")
-                if price is not None:
+                currency = offers.get("priceCurrency")
+                if price is not None and currency in (None, "JPY"):
                     try:
                         result["price"] = int(float(price))
                     except (TypeError, ValueError):
@@ -214,6 +219,15 @@ async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 3000
                 locale="ja-JP",
                 timezone_id="Asia/Tokyo",
                 extra_http_headers={"Accept-Language": "ja-JP,ja;q=0.9"},
+            )
+            # 海外(RailwayのUSサーバー等)からだとAmazon.co.jpが価格をUSD表示にし、配送先も
+            # 海外扱いになって買い物かごの価格欄が出ないため、通貨と配送先国を日本に指定する。
+            await context.add_cookies(
+                [
+                    {"name": "i18n-prefs", "value": "JPY", "domain": ".amazon.co.jp", "path": "/"},
+                    {"name": "lc-acbjp", "value": "ja_JP", "domain": ".amazon.co.jp", "path": "/"},
+                    {"name": "sp-cdn", "value": '"L5Z9:JP"', "domain": ".amazon.co.jp", "path": "/"},
+                ]
             )
             page = await context.new_page()
             await _apply_stealth(page)
