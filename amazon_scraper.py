@@ -228,7 +228,21 @@ async def _set_japan_delivery(page: Page) -> str:
         loc = (await page.locator("#glow-ingress-block").inner_text(timeout=3000)).replace("\n", " ")
         return f"ok:{loc}"
     except Exception as e:
-        return f"fail@{step}:{type(e).__name__}"
+        detail = ""
+        try:
+            detail = await page.evaluate(
+                """() => {
+                    const c = document.querySelector('.a-popover-content, #GLUXContent, .a-popover');
+                    const ids = Array.from(document.querySelectorAll('[id^=GLUX]'))
+                        .filter(e => e.offsetParent !== null).map(e => e.id).slice(0, 15);
+                    const sel = document.querySelector('#GLUXCountryList');
+                    return JSON.stringify({text: c ? c.innerText.slice(0, 160) : null, visibleIds: ids,
+                        country: sel ? sel.value : null});
+                }"""
+            )
+        except Exception:
+            pass
+        return f"fail@{step}:{type(e).__name__} {detail}"
 
 
 async def scrape_amazon(asin: str, headless: bool = True, timeout_ms: int = 30000) -> dict:
