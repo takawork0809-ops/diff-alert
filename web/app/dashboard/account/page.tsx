@@ -45,10 +45,10 @@ export default async function AccountPage() {
         <section className="card p-5 sm:p-6">
           <h2 className="text-base font-black">パスワードの設定・変更</h2>
           <p className="mb-5 mt-1 text-xs leading-relaxed text-slate-400">
-            メールのリンクでログインした方は、ここでパスワードを設定すると、次回からメールアドレスとパスワードでもログインできます。
+            メールのリンクでログインした方は、ここでパスワードを設定すると、次回からメールアドレスとパスワードでもログインできます。変更の前に、登録メールアドレス宛ての確認コードで本人確認を行います。
             すでに設定済みの場合は、新しいパスワードに変更されます。
           </p>
-          <PasswordForm />
+          <PasswordForm email={user.email ?? ""} />
         </section>
       </main>
     </div>
