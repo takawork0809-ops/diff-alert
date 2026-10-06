@@ -54,6 +54,14 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
           options: { emailRedirectTo: redirectTo },
         });
         if (error) throw error;
+        // 登録済みのメールアドレスだと、Supabaseは成功を装って(identitiesが空で)返し、メールは送らない。
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          setStatus("error");
+          setMessage(
+            "このメールアドレスはすでに登録されています。ログイン画面からログインしてください(パスワード未設定の場合は「メールのリンクでログイン」)。"
+          );
+          return;
+        }
         if (data.session) {
           router.push("/dashboard");
           router.refresh();
