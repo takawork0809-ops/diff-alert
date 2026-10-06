@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Logo from "@/components/Logo";
@@ -33,9 +34,16 @@ export default async function DashboardPage() {
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <Logo />
           <div className="flex items-center gap-3">
-            <span className="hidden max-w-[16rem] truncate text-xs text-slate-400 sm:block">
+            <Link
+              href="/dashboard/account"
+              className="hidden max-w-[16rem] truncate text-xs text-slate-400 hover:text-brand-300 sm:block"
+              title="アカウント設定"
+            >
               {user.email}
-            </span>
+            </Link>
+            <Link href="/dashboard/account" className="btn-ghost">
+              設定
+            </Link>
             <form action="/auth/signout" method="post">
               <button type="submit" className="btn-ghost">
                 ログアウト

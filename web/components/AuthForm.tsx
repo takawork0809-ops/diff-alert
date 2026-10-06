@@ -13,8 +13,6 @@ function friendlyError(message: string, mode: Mode, viaLink: boolean): string {
   if (m.includes("invalid login credentials")) return "メールアドレスまたはパスワードが違います。";
   if (m.includes("email not confirmed")) return "メール認証が完了していません。届いた確認メールのリンクをクリックしてください。";
   if (m.includes("rate") || m.includes("too many")) return "短時間に送信しすぎています。しばらくしてからもう一度お試しください。";
-  if (m.includes("signups not allowed") || m.includes("not allowed for otp"))
-    return "このメールアドレスは未登録です。「無料で始める」から登録してください。";
   if (m.includes("password") && m.includes("character")) return "パスワードは8文字以上で入力してください。";
   if (mode === "signup" && m.includes("already")) return "このメールアドレスは登録済みです。ログインしてください。";
   return viaLink ? `送信に失敗しました: ${message}` : `エラーが発生しました: ${message}`;
@@ -54,14 +52,6 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
           options: { emailRedirectTo: redirectTo },
         });
         if (error) throw error;
-        // 登録済みのメールアドレスだと、Supabaseは成功を装って(identitiesが空で)返し、メールは送らない。
-        if (data.user && (data.user.identities?.length ?? 0) === 0) {
-          setStatus("error");
-          setMessage(
-            "このメールアドレスはすでに登録されています。ログイン画面からログインしてください(パスワード未設定の場合は「メールのリンクでログイン」)。"
-          );
-          return;
-        }
         if (data.session) {
           router.push("/dashboard");
           router.refresh();
@@ -86,6 +76,12 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
+      const raw = ((err as Error).message ?? String(err)).toLowerCase();
+      // 未登録かどうかを画面で出し分けない(アカウントの存在確認に悪用されるため)。
+      if (viaLink && (raw.includes("signups not allowed") || raw.includes("not allowed for otp"))) {
+        setStatus("sent");
+        return;
+      }
       setStatus("error");
       setMessage(friendlyError((err as Error).message ?? String(err), mode, viaLink));
     }
@@ -103,14 +99,14 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
           {isSignup ? "メール認証が完了し、ダッシュボードが開きます。" : "ダッシュボードが開きます。"}
           届かない場合は迷惑メールフォルダもご確認ください。
         </p>
-        {isSignup && (
-          <p className="mt-3 text-xs text-slate-500">
-            すでに登録済みのメールアドレスの場合は、確認メールは届きません。
-            <Link href="/login" className="ml-1 text-brand-300 underline">
-              ログインはこちら
-            </Link>
-          </p>
-        )}
+        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          {isSignup
+            ? "すでに登録済みのメールアドレスの場合は、確認メールは届きません。"
+            : "登録済みのメールアドレスの場合のみ、メールが届きます。"}
+          <Link href={isSignup ? "/login" : "/signup"} className="ml-1 text-brand-300 underline">
+            {isSignup ? "ログインはこちら" : "はじめての方はこちら"}
+          </Link>
+        </p>
       </div>
     );
   }
