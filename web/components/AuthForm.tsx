@@ -24,6 +24,7 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [viaLink, setViaLink] = useState(false); // ログイン時: パスワードなしでメールのリンクを使う
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState(
@@ -35,6 +36,11 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSignup && password !== passwordConfirm) {
+      setStatus("error");
+      setMessage("パスワードが一致しません。もう一度入力してください。");
+      return;
+    }
     setStatus("sending");
     setMessage("");
     const supabase = createClient();
@@ -132,6 +138,24 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
             autoComplete={isSignup ? "new-password" : "current-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="input"
+          />
+        </div>
+      )}
+
+      {isSignup && (
+        <div>
+          <label htmlFor="password-confirm" className="label">
+            パスワード(確認用)
+          </label>
+          <input
+            id="password-confirm"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
             className="input"
           />
         </div>
