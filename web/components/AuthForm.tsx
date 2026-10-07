@@ -165,6 +165,14 @@ export default function AuthForm({ mode, authError = false }: { mode: Mode; auth
         </div>
       )}
 
+      {!isSignup && !viaLink && (
+        <p className="-mt-2 text-right text-xs">
+          <Link href="/forgot-password" className="text-slate-400 underline-offset-2 hover:text-brand-300 hover:underline">
+            パスワードを忘れた方
+          </Link>
+        </p>
+      )}
+
       {message && (
         <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
           {message}
