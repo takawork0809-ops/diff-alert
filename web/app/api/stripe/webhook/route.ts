@@ -81,7 +81,8 @@ async function syncSubscription(sub: Stripe.Subscription, fallbackUserId: string
       plan,
       status: sub.status,
       current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
-      cancel_at_period_end: sub.cancel_at_period_end,
+      // 新しいAPIでは、ポータルからの「期間の終わりに解約」は cancel_at(解約日時)で表される。どちらでも解約予約として扱う。
+      cancel_at_period_end: sub.cancel_at_period_end || sub.cancel_at != null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import CountUp from "@/components/CountUp";
 import { PLANS, yen } from "@/lib/plans";
+import SiteFooter from "@/components/SiteFooter";
 
 const problems = [
   {
@@ -253,9 +254,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="border-t border-white/5 py-8 text-center text-xs text-slate-500">
-        © 2026 差益レーダー
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -34,6 +34,17 @@ export default async function SignupPage() {
           <p className="mt-4 text-center text-xs text-slate-500">
             クレジットカード不要 ・ 監視3商品まで無料
           </p>
+          <p className="mt-2 text-center text-xs leading-relaxed text-slate-500">
+            登録すると、
+            <Link href="/terms" className="text-brand-300 underline">
+              利用規約
+            </Link>
+            と
+            <Link href="/privacy" className="text-brand-300 underline">
+              プライバシーポリシー
+            </Link>
+            に同意したものとみなされます。
+          </p>
         </div>
         <p className="mt-6 text-center text-sm text-slate-500">
           <Link href="/" className="hover:text-brand-300">

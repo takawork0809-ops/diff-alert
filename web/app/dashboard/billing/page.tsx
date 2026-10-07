@@ -30,7 +30,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
   const notice = searchParams.status ? STATUS_MESSAGES[searchParams.status] : undefined;
   const sub = info.subscription;
   const periodEnd = sub?.current_period_end
-    ? new Date(sub.current_period_end).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
+    ? new Date(sub.current_period_end).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Tokyo" })
     : null;
 
   return (
@@ -139,6 +139,19 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
           )}
           <p className="mt-4 text-xs leading-relaxed text-slate-500">
             お支払いにはクレジットカードをご利用いただけます(決済はStripeが安全に処理します)。有料プランはいつでも解約でき、解約後も、お支払い済みの期間の終わりまでご利用いただけます。
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            <Link href="/terms" className="underline hover:text-brand-300">
+              利用規約
+            </Link>
+            {" ・ "}
+            <Link href="/privacy" className="underline hover:text-brand-300">
+              プライバシーポリシー
+            </Link>
+            {" ・ "}
+            <Link href="/tokushoho" className="underline hover:text-brand-300">
+              特定商取引法に基づく表記
+            </Link>
           </p>
         </section>
       </main>
