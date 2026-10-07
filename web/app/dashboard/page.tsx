@@ -6,7 +6,8 @@ import ProductForm from "./ProductForm";
 import ProductCard from "./ProductCard";
 import { GuideSteps } from "@/components/UsageGuide";
 import WelcomeModal from "@/components/WelcomeModal";
-import { FREE_PLAN_LIMIT, type MonitoredProduct } from "@/lib/types";
+import { getPlanInfo } from "@/lib/billing";
+import type { MonitoredProduct } from "@/lib/types";
 
 export const metadata = { title: "ダッシュボード | 差益レーダー" };
 export const dynamic = "force-dynamic";
@@ -28,7 +29,8 @@ export default async function DashboardPage() {
   const chances = products.filter(
     (p) => p.last_net_margin != null && p.last_net_margin >= p.target_margin
   ).length;
-  const full = products.length >= FREE_PLAN_LIMIT;
+  const plan = await getPlanInfo(supabase, user.id);
+  const full = products.length >= plan.limit;
 
   return (
     <div className="min-h-screen">
@@ -46,6 +48,9 @@ export default async function DashboardPage() {
             </Link>
             <Link href="/dashboard/guide" className="btn-ghost">
               使い方
+            </Link>
+            <Link href="/dashboard/billing" className="btn-ghost">
+              プラン
             </Link>
             <Link href="/dashboard/account" className="btn-ghost">
               設定
@@ -65,7 +70,7 @@ export default async function DashboardPage() {
             <p className="text-xs text-slate-400">監視中の商品</p>
             <p className="mt-1 font-num text-3xl font-black">
               {products.length}
-              <span className="text-base font-bold text-slate-500"> / {FREE_PLAN_LIMIT}</span>
+              <span className="text-base font-bold text-slate-500"> / {plan.limit}</span>
             </p>
           </div>
           <div className={`card p-4 sm:p-5 ${chances > 0 ? "border-brand-500/50" : ""}`}>

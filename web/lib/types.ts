@@ -21,6 +21,3 @@ export type MonitoredProduct = {
   last_checked_at: string | null;
   created_at: string;
 };
-
-// 無料プランの監視上限(課金機能は次フェーズ)
-export const FREE_PLAN_LIMIT = 3;

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { addProduct, type FormState } from "./actions";
+import Link from "next/link";
 import { CATEGORY_LABELS, type Category } from "@/lib/types";
 
 const initial: FormState = { ok: false, message: "" };
@@ -105,7 +106,14 @@ export default function ProductForm({ disabled }: { disabled: boolean }) {
 
       <div className="mt-5 flex items-center gap-3">
         <SubmitButton />
-        {disabled && <span className="text-xs text-amber-300">無料プランの上限に達しています</span>}
+        {disabled && (
+          <span className="text-xs text-amber-300">
+            監視の上限に達しています。
+            <Link href="/dashboard/billing" className="ml-1 underline">
+              プランを見る
+            </Link>
+          </span>
+        )}
       </div>
     </form>
   );

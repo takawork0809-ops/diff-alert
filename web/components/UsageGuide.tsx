@@ -1,4 +1,4 @@
-import { FREE_PLAN_LIMIT } from "@/lib/types";
+import { PLANS } from "@/lib/plans";
 
 // 使い方の説明パーツ。空状態・ウェルカム画面・使い方ページで共通して使う(状態を持たないので Server/Client どちらからでも読み込める)。
 
@@ -56,7 +56,7 @@ export function GuideHow() {
       </li>
       <li>
         <span className="mr-1 text-brand-400">●</span>
-        無料プランでは、最大{FREE_PLAN_LIMIT}商品まで登録できます。
+        無料プランでは{PLANS.free.limit}商品まで、有料プランでは最大{PLANS.pro.limit}商品まで登録できます(「プラン」から申し込めます)。
       </li>
     </ul>
   );

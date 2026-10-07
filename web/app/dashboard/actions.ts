@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAmazonTitle } from "@/lib/amazon";
-import { FREE_PLAN_LIMIT, type Category } from "@/lib/types";
+import { getPlanInfo } from "@/lib/billing";
+import type { Category } from "@/lib/types";
 
 export type FormState = { ok: boolean; message: string };
 
@@ -44,10 +45,14 @@ export async function addProduct(_prev: FormState, formData: FormData): Promise<
     .from("monitored_products")
     .select("id", { count: "exact", head: true });
   if (countError) return { ok: false, message: dbMessage(countError.message) };
-  if ((count ?? 0) >= FREE_PLAN_LIMIT) {
+  const plan = await getPlanInfo(supabase, user.id);
+  if ((count ?? 0) >= plan.limit) {
     return {
       ok: false,
-      message: `無料プランの監視上限(${FREE_PLAN_LIMIT}商品)に達しています。不要な商品を削除してください。`,
+      message:
+        plan.plan === "pro"
+          ? `ご契約のプランの監視上限(${plan.limit}商品)に達しています。不要な商品を削除してください。`
+          : `${plan.name}の監視上限(${plan.limit}商品)に達しています。不要な商品を削除するか、「プラン」から上位のプランをご検討ください。`,
     };
   }
 

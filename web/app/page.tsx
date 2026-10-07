@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import CountUp from "@/components/CountUp";
+import { PLANS, yen } from "@/lib/plans";
 
 const problems = [
   {
@@ -44,35 +45,15 @@ const compare = [
   { label: "チャンスの発見", keepa: "自分でグラフを見て判断", ours: "目標を超えた瞬間にメール通知" },
 ];
 
-const plans = [
-  {
-    name: "無料プラン",
-    price: "¥0",
-    per: "",
-    items: "監視 3商品まで",
-    features: ["毎朝の自動チェック", "メール通知", "手数料込みの純利益計算"],
-    cta: "無料で始める",
-    highlight: false,
-  },
-  {
-    name: "スタンダード",
-    price: "¥3,980",
-    per: "/月",
-    items: "監視 30商品",
-    features: ["無料プランの全機能", "30商品まで同時監視", "優先サポート"],
-    cta: "無料で始める",
-    highlight: true,
-  },
-  {
-    name: "プロ",
-    price: "¥9,800",
-    per: "/月",
-    items: "監視 無制限",
-    features: ["スタンダードの全機能", "監視商品数 無制限", "大量仕入れ向け"],
-    cta: "無料で始める",
-    highlight: false,
-  },
-];
+const plans = [PLANS.free, PLANS.standard, PLANS.pro].map((p) => ({
+  name: p.name,
+  price: yen(p.price),
+  per: p.price > 0 ? "/月(税込)" : "",
+  items: `監視 ${p.limit}商品まで`,
+  features: p.features,
+  cta: "無料で始める",
+  highlight: p.id === "standard",
+}));
 
 export default function Home() {
   return (
@@ -256,7 +237,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs text-slate-500">有料プランは近日公開予定です。現在はすべて無料プランの範囲でお試しいただけます。</p>
+          <p className="mt-6 text-center text-xs text-slate-500">まずは無料プランでお試しください。有料プランは、ログイン後の「プラン」からお申し込みいただけます。いつでも解約できます。</p>
         </div>
       </section>
 
