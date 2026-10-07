@@ -46,6 +46,7 @@ export default function ProductForm({ disabled }: { disabled: boolean }) {
             className="input font-num uppercase"
             autoComplete="off"
           />
+          <p className="mt-1 text-[11px] text-slate-500">AmazonのURLの「/dp/」の後ろの10桁</p>
         </div>
         <div>
           <label htmlFor="category" className="label">
@@ -71,6 +72,7 @@ export default function ProductForm({ disabled }: { disabled: boolean }) {
             placeholder="https://item.rakuten.co.jp/shop/item/"
             className="input"
           />
+          <p className="mt-1 text-[11px] text-slate-500">楽天市場(item.rakuten.co.jp)の同じ商品のページ</p>
         </div>
         <div>
           <label htmlFor="target_margin" className="label">
@@ -86,6 +88,7 @@ export default function ProductForm({ disabled }: { disabled: boolean }) {
             defaultValue={1000}
             className="input font-num"
           />
+          <p className="mt-1 text-[11px] text-slate-500">手数料を引いた後に、最低いくら残したいか</p>
         </div>
       </div>
 

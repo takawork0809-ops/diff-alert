@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import Logo from "@/components/Logo";
 import ProductForm from "./ProductForm";
 import ProductCard from "./ProductCard";
+import { GuideSteps } from "@/components/UsageGuide";
+import WelcomeModal from "@/components/WelcomeModal";
 import { FREE_PLAN_LIMIT, type MonitoredProduct } from "@/lib/types";
 
 export const metadata = { title: "ダッシュボード | 差益レーダー" };
@@ -30,6 +32,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen">
+      <WelcomeModal />
       <header className="sticky top-0 z-30 border-b border-white/5 bg-navy-950/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <Logo />
@@ -40,6 +43,9 @@ export default async function DashboardPage() {
               title="アカウント設定"
             >
               {user.email}
+            </Link>
+            <Link href="/dashboard/guide" className="btn-ghost">
+              使い方
             </Link>
             <Link href="/dashboard/account" className="btn-ghost">
               設定
@@ -76,6 +82,19 @@ export default async function DashboardPage() {
             データベースの準備ができていません。<code className="rounded bg-black/30 px-1">web/supabase/monitored_products.sql</code>{" "}
             をSupabaseのSQL Editorで実行してください。
           </div>
+        )}
+
+        {products.length === 0 && !tableMissing && (
+          <section className="card border-brand-500/40 p-5 sm:p-6">
+            <h2 className="text-base font-black">はじめに: 商品を1つ登録してみましょう</h2>
+            <p className="mb-4 mt-1 text-xs leading-relaxed text-slate-400">
+              Amazonの販売価格と楽天の仕入れ価格の差を毎朝チェックし、利益が出るとメールでお知らせします。
+            </p>
+            <GuideSteps />
+            <Link href="/dashboard/guide" className="mt-4 inline-block text-xs text-slate-400 underline hover:text-brand-300">
+              詳しい使い方・純利益の計算を見る
+            </Link>
+          </section>
         )}
 
         <ProductForm disabled={full} />
