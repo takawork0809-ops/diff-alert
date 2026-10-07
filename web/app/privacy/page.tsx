@@ -1,5 +1,5 @@
 import Link from "next/link";
-import LegalLayout, { H2, OL, UL } from "@/components/LegalLayout";
+import LegalLayout, { H2, UL } from "@/components/LegalLayout";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata = { title: "プライバシーポリシー | 差益レーダー" };
