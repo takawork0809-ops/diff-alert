@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { addProduct, type FormState } from "./actions";
 import Link from "next/link";
+import { extractAsin } from "@/lib/bulk-parse";
 import { CATEGORY_LABELS, type Category } from "@/lib/types";
 
 const initial: FormState = { ok: false, message: "" };
@@ -35,19 +36,22 @@ export default function ProductForm({ disabled }: { disabled: boolean }) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div>
           <label htmlFor="asin" className="label">
-            ASIN
+            ASIN または AmazonのURL
           </label>
           <input
             id="asin"
             name="asin"
             required
-            maxLength={10}
-            minLength={10}
-            placeholder="B0CPL68SZN"
-            className="input font-num uppercase"
+            placeholder="B0CPL68SZN または https://www.amazon.co.jp/dp/…"
+            className="input font-num"
             autoComplete="off"
+            onBlur={(e) => {
+              // AmazonのURLを貼ったときは、ASIN(10桁)に直して見せる
+              const asin = extractAsin(e.currentTarget.value);
+              if (asin) e.currentTarget.value = asin;
+            }}
           />
-          <p className="mt-1 text-[11px] text-slate-500">AmazonのURLの「/dp/」の後ろの10桁</p>
+          <p className="mt-1 text-[11px] text-slate-500">AmazonのURLを、そのまま貼れます(「/dp/」の後ろの10桁が、ASINです)</p>
         </div>
         <div>
           <label htmlFor="category" className="label">

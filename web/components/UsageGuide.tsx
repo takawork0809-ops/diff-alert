@@ -4,8 +4,8 @@ import { PLANS } from "@/lib/plans";
 
 const STEPS = [
   {
-    title: "AmazonでASINを確認",
-    body: "Amazonの商品ページのURLにある「/dp/」の後ろの10桁の英数字がASINです。",
+    title: "AmazonのURLかASINを用意",
+    body: "Amazonの商品ページのURLを、そのまま貼れます。ASIN(URLの「/dp/」の後ろの10桁)でも構いません。",
     example: "amazon.co.jp/dp/B0CPL68SZN → B0CPL68SZN",
   },
   {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Logo from "@/components/Logo";
 import ProductForm from "./ProductForm";
+import BulkImport from "./BulkImport";
 import ProductCard from "./ProductCard";
 import { GuideSteps } from "@/components/UsageGuide";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -103,6 +104,8 @@ export default async function DashboardPage() {
         )}
 
         <ProductForm disabled={full} />
+
+        <BulkImport remaining={Math.max(0, plan.limit - products.length)} planName={plan.name} limit={plan.limit} />
 
         <section>
           <h2 className="mb-3 text-base font-black">登録商品</h2>
