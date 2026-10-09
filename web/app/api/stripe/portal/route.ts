@@ -22,9 +22,12 @@ export async function POST(request: Request) {
   if (!customer) return back("error");
 
   try {
+    // 同じStripeアカウントを、他のサービスと共有している場合に備えて、専用のポータル設定を指定できるようにする。
+    const configuration = process.env.STRIPE_PORTAL_CONFIGURATION;
     const session = await getStripe().billingPortal.sessions.create({
       customer,
       return_url: `${origin}/dashboard/billing`,
+      ...(configuration ? { configuration } : {}),
     });
     return NextResponse.redirect(session.url, 303);
   } catch (e) {

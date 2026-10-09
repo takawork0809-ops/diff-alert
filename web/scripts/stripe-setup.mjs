@@ -5,21 +5,30 @@
 //   1) .env.local に  STRIPE_SECRET_KEY=sk_test_...  を書く(Stripeの「開発者 > APIキー」のテスト用シークレットキー)
 //   2) node --env-file=.env.local scripts/stripe-setup.mjs https://diff-alert.vercel.app
 //
-// 本番(sk_live_)のキーでは動かない。本番用の準備は、別途、内容を確認してから行う。
+// 本番のキー(sk_live_...)で動かすときは、引数に --live を付ける(誤って本番に作らないための確認)。
+//   node --env-file=.env.local scripts/stripe-setup.mjs https://diff-alert.vercel.app --live
+// 何も消さず、追加だけを行う。既存の商品・webhook・ポータル設定には触れない。
 
 import Stripe from "stripe";
 
 const key = process.env.STRIPE_SECRET_KEY;
 const siteUrl = (process.argv[2] ?? "").replace(/\/$/, "");
+const liveFlag = process.argv.includes("--live");
 
 if (!key) {
   console.error("STRIPE_SECRET_KEY が設定されていません(.env.local を確認してください)。");
   process.exit(1);
 }
-if (!key.startsWith("sk_test_")) {
-  console.error("このスクリプトは、テストモードのキー(sk_test_...)でのみ動きます。");
+const isLive = key.startsWith("sk_live_");
+if (!key.startsWith("sk_test_") && !isLive) {
+  console.error("STRIPE_SECRET_KEY は、sk_test_... または sk_live_... の形式で指定してください。");
   process.exit(1);
 }
+if (isLive && !liveFlag) {
+  console.error("本番のキー(sk_live_...)です。本番に作成してよければ、引数に --live を付けて、もう一度実行してください。");
+  process.exit(1);
+}
+console.log(isLive ? "【本番モード】で実行します。" : "【テストモード】で実行します。");
 if (!/^https:\/\//.test(siteUrl)) {
   console.error("公開URLを引数で指定してください。例: node --env-file=.env.local scripts/stripe-setup.mjs https://diff-alert.vercel.app");
   process.exit(1);
@@ -81,10 +90,12 @@ if (existing) {
 
 // カスタマーポータル(支払い方法の変更・プラン変更・解約をお客様自身で行う画面)
 const configs = await stripe.billingPortal.configurations.list({ limit: 100 });
-if (configs.data.some((c) => c.metadata?.app === "sagakuradar")) {
+const existingPortal = configs.data.find((c) => c.metadata?.app === "sagakuradar");
+let portalId = existingPortal?.id ?? null;
+if (existingPortal) {
   console.log("カスタマーポータルの設定は既にあります。");
 } else {
-  await stripe.billingPortal.configurations.create({
+  const createdPortal = await stripe.billingPortal.configurations.create({
     business_profile: { headline: "差益レーダーのお支払いの管理" },
     metadata: { app: "sagakuradar" },
     features: {
@@ -100,12 +111,14 @@ if (configs.data.some((c) => c.metadata?.app === "sagakuradar")) {
       },
     },
   });
-  console.log("カスタマーポータルの設定を作成しました。");
+  portalId = createdPortal.id;
+  console.log("カスタマーポータルの設定を作成しました(差益レーダー専用)。");
 }
 
 console.log("\n===== Vercel の環境変数に登録する値(Production と Preview の両方) =====");
 console.log(`STRIPE_PRICE_STANDARD=${prices.standard}`);
 console.log(`STRIPE_PRICE_PRO=${prices.pro}`);
+console.log(`STRIPE_PORTAL_CONFIGURATION=${portalId}`);
 console.log(webhookSecret ? `STRIPE_WEBHOOK_SECRET=${webhookSecret}` : "STRIPE_WEBHOOK_SECRET=(上記のとおり、既存のwebhookのシークレットを使う)");
 console.log("STRIPE_SECRET_KEY=(.env.local に書いた sk_test_... と同じ値)");
 console.log("SUPABASE_SERVICE_ROLE_KEY=(Supabaseの「Project Settings > API」の service_role キー)");
