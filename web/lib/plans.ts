@@ -63,6 +63,12 @@ export function planFromPriceId(priceId: string | undefined | null): PaidPlanId 
   return null;
 }
 
+// 有料プランの「新規申し込み」を受け付けるか。BILLING_ENABLED=true のときだけ受け付ける(未設定なら止まっている)。
+// 契約済みのお客様のポータルや、Stripeからの通知(webhook)は、このスイッチに関係なく動く。
+export function paidSalesEnabled(): boolean {
+  return process.env.BILLING_ENABLED === "true" && billingConfigured();
+}
+
 export function billingConfigured(): boolean {
   return !!(
     process.env.STRIPE_SECRET_KEY &&

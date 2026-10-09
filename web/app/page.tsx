@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import CountUp from "@/components/CountUp";
-import { PLANS, yen } from "@/lib/plans";
+import { PLANS, paidSalesEnabled, yen } from "@/lib/plans";
 import SiteFooter from "@/components/SiteFooter";
 
 const problems = [
@@ -238,7 +238,9 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs text-slate-500">まずは無料プランでお試しください。有料プランは、ログイン後の「プラン」からお申し込みいただけます。いつでも解約できます。</p>
+          <p className="mt-6 text-center text-xs text-slate-500">{paidSalesEnabled()
+              ? "まずは無料プランでお試しください。有料プランは、ログイン後の「プラン」からお申し込みいただけます。いつでも解約できます。"
+              : "有料プランは近日公開予定です。現在は、無料プランをお試しいただけます。"}</p>
         </div>
       </section>
 

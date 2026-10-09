@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
-import { PAID_PLAN_IDS, billingConfigured, effectivePlan, priceIdFor, type PaidPlanId, type SubscriptionRow } from "@/lib/plans";
+import { PAID_PLAN_IDS, effectivePlan, paidSalesEnabled, priceIdFor, type PaidPlanId, type SubscriptionRow } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(`${origin}/login`, 303);
-  if (!billingConfigured()) return back("unavailable");
+  if (!paidSalesEnabled()) return back("unavailable");
 
   const form = await request.formData();
   const plan = String(form.get("plan") ?? "") as PaidPlanId;

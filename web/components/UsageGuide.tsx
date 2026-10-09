@@ -56,7 +56,7 @@ export function GuideHow() {
       </li>
       <li>
         <span className="mr-1 text-brand-400">●</span>
-        無料プランでは{PLANS.free.limit}商品まで、有料プランでは最大{PLANS.pro.limit}商品まで登録できます(「プラン」から申し込めます)。
+        無料プランでは、最大{PLANS.free.limit}商品まで登録できます。
       </li>
     </ul>
   );

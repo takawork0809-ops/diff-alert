@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Logo from "@/components/Logo";
 import { getPlanInfo } from "@/lib/billing";
-import { PAID_PLAN_IDS, PLANS, billingConfigured, yen } from "@/lib/plans";
+import { PAID_PLAN_IDS, PLANS, billingConfigured, paidSalesEnabled, yen } from "@/lib/plans";
 
 export const metadata = { title: "プラン・お支払い | 差益レーダー" };
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ const STATUS_MESSAGES: Record<string, { tone: "ok" | "warn"; text: string }> = {
   success: { tone: "ok", text: "お申し込みありがとうございます。プランの反映までに、数十秒かかることがあります。表示が変わらない場合は、ページを再読み込みしてください。" },
   cancel: { tone: "warn", text: "お申し込みはキャンセルされました。料金は発生していません。" },
   already: { tone: "warn", text: "すでに有料プランをご契約中です。プランの変更・解約は「お支払いの管理」から行えます。" },
-  unavailable: { tone: "warn", text: "決済の準備中です。しばらくしてからお試しください。" },
+  unavailable: { tone: "warn", text: "有料プランは近日公開予定です。しばらくお待ちください。" },
   error: { tone: "warn", text: "処理に失敗しました。時間をおいて、もう一度お試しください。" },
 };
 
@@ -26,7 +26,8 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
   const info = await getPlanInfo(supabase, user.id);
   const { count } = await supabase.from("monitored_products").select("id", { count: "exact", head: true });
   const used = count ?? 0;
-  const ready = billingConfigured();
+  const ready = billingConfigured(); // 契約済みのお客様のポータル用
+  const salesOpen = paidSalesEnabled(); // 新規の申し込み用
   const notice = searchParams.status ? STATUS_MESSAGES[searchParams.status] : undefined;
   const sub = info.subscription;
   const periodEnd = sub?.current_period_end
@@ -125,8 +126,8 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
                   {p.id !== "free" && !current && info.plan === "free" && (
                     <form action="/api/stripe/checkout" method="post" className="mt-5">
                       <input type="hidden" name="plan" value={p.id} />
-                      <button type="submit" className="btn-primary w-full" disabled={!ready}>
-                        {p.name}で申し込む
+                      <button type="submit" className="btn-primary w-full" disabled={!salesOpen}>
+                        {salesOpen ? `${p.name}で申し込む` : "近日公開"}
                       </button>
                     </form>
                   )}
@@ -134,8 +135,8 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
               );
             })}
           </div>
-          {!ready && (
-            <p className="mt-4 text-xs text-slate-500">決済機能は準備中です。公開までしばらくお待ちください。</p>
+          {!salesOpen && info.plan === "free" && (
+            <p className="mt-4 text-xs text-slate-500">有料プランは近日公開予定です。公開までは、無料プランをご利用ください。</p>
           )}
           <p className="mt-4 text-xs leading-relaxed text-slate-500">
             お支払いにはクレジットカードをご利用いただけます(決済はStripeが安全に処理します)。有料プランはいつでも解約でき、解約後も、お支払い済みの期間の終わりまでご利用いただけます。
