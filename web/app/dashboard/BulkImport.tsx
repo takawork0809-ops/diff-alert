@@ -20,15 +20,28 @@ async function readTextFile(file: File): Promise<string> {
   }
 }
 
-export default function BulkImport({ remaining, planName, limit }: { remaining: number; planName: string; limit: number }) {
+export default function BulkImport({
+  remaining,
+  planName,
+  limit,
+  existingAsins,
+}: {
+  remaining: number;
+  planName: string;
+  limit: number;
+  existingAsins: string[];
+}) {
   const [text, setText] = useState("");
   const [result, setResult] = useState<BulkResult | null>(null);
   const [fileError, setFileError] = useState("");
   const [pending, startTransition] = useTransition();
 
   const parsed = useMemo(() => parseBulkText(text), [text]);
-  const okCount = parsed.rows.filter((r) => r.ok).length;
-  const willAdd = Math.min(okCount, remaining);
+  const existing = useMemo(() => new Set(existingAsins), [existingAsins]);
+  const okRows = parsed.rows.filter((r) => r.ok);
+  const duplicateCount = okRows.filter((r) => r.asin && existing.has(r.asin)).length; // すでに登録済みの商品
+  const newCount = okRows.length - duplicateCount;
+  const willAdd = Math.min(newCount, remaining);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -123,9 +136,14 @@ export default function BulkImport({ remaining, planName, limit }: { remaining: 
         {parsed.rows.length > 0 && !result && (
           <div>
             <p className="mb-2 text-xs text-slate-300">
-              確認: {parsed.rows.length}行のうち、<span className="font-bold text-brand-300">{okCount}行が登録できます</span>
-              {parsed.rows.length - okCount > 0 && <span className="text-red-300">(読み取れない行が{parsed.rows.length - okCount}行あります)</span>}
-              {okCount > remaining && <span className="text-amber-300">(残り枠が{remaining}商品のため、先頭の{remaining}商品だけを登録します)</span>}
+              確認: {parsed.rows.length}行のうち、<span className="font-bold text-brand-300">{willAdd}行が登録されます</span>
+              {parsed.rows.length - okRows.length > 0 && (
+                <span className="text-red-300">(読み取れない行が{parsed.rows.length - okRows.length}行あります)</span>
+              )}
+              {duplicateCount > 0 && <span className="text-slate-400">(すでに登録済みの{duplicateCount}行は、登録されません)</span>}
+              {newCount > remaining && (
+                <span className="text-amber-300">(残り枠が{remaining}商品のため、先頭の{remaining}商品だけを登録します)</span>
+              )}
               {parsed.truncated && <span className="text-amber-300">(先頭の200行だけを処理します)</span>}
             </p>
             <div className="max-h-64 overflow-auto rounded-lg border border-white/10">
@@ -139,14 +157,19 @@ export default function BulkImport({ remaining, planName, limit }: { remaining: 
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {parsed.rows.map((r) => (
-                    <tr key={r.line}>
-                      <td className="px-3 py-1.5 font-num text-slate-500">{r.line}</td>
-                      <td className="px-3 py-1.5 font-num">{r.asin ?? "—"}</td>
-                      <td className="px-3 py-1.5 font-num">{r.targetMargin !== undefined ? `¥${r.targetMargin.toLocaleString("ja-JP")}` : "—"}</td>
-                      <td className={`px-3 py-1.5 ${r.ok ? "text-brand-300" : "text-red-300"}`}>{r.ok ? "OK" : r.error}</td>
-                    </tr>
-                  ))}
+                  {parsed.rows.map((r) => {
+                    const registered = r.ok && !!r.asin && existing.has(r.asin);
+                    return (
+                      <tr key={r.line}>
+                        <td className="px-3 py-1.5 font-num text-slate-500">{r.line}</td>
+                        <td className="px-3 py-1.5 font-num">{r.asin ?? "—"}</td>
+                        <td className="px-3 py-1.5 font-num">{r.targetMargin !== undefined ? `¥${r.targetMargin.toLocaleString("ja-JP")}` : "—"}</td>
+                        <td className={`px-3 py-1.5 ${registered ? "text-slate-400" : r.ok ? "text-brand-300" : "text-red-300"}`}>
+                          {registered ? "登録済み(登録されません)" : r.ok ? "OK" : r.error}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

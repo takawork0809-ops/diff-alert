@@ -105,7 +105,12 @@ export default async function DashboardPage() {
 
         <ProductForm disabled={full} />
 
-        <BulkImport remaining={Math.max(0, plan.limit - products.length)} planName={plan.name} limit={plan.limit} />
+        <BulkImport
+          remaining={Math.max(0, plan.limit - products.length)}
+          planName={plan.name}
+          limit={plan.limit}
+          existingAsins={products.map((p) => p.asin)}
+        />
 
         <section>
           <h2 className="mb-3 text-base font-black">登録商品</h2>
