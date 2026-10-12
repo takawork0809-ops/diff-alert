@@ -31,6 +31,9 @@ export default function ProductForm({ disabled }: { disabled: boolean }) {
       <h2 className="text-base font-black">商品を登録</h2>
       <p className="mt-1 text-xs text-slate-400">
         監視したいAmazon商品と、同じ商品の楽天ページを登録します。
+        <Link href="/dashboard/find" className="ml-2 text-brand-300 underline">
+          楽天の仕入れ候補を、自動で探す →
+        </Link>
       </p>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
