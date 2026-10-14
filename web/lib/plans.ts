@@ -17,14 +17,14 @@ export const PLANS: Record<PlanId, { id: PlanId; name: string; price: number; li
     name: "スタンダード",
     price: 980,
     limit: 20,
-    features: ["無料プランの全機能", "20商品まで同時監視"],
+    features: ["無料プランの全機能", "20件の条件を登録"],
   },
   pro: {
     id: "pro",
     name: "プロ",
     price: 1980,
     limit: 50,
-    features: ["スタンダードの全機能", "50商品まで同時監視"],
+    features: ["スタンダードの全機能", "50件の条件を登録"],
   },
 };
 

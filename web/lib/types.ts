@@ -21,3 +21,30 @@ export type MonitoredProduct = {
   last_checked_at: string | null;
   created_at: string;
 };
+
+export type WatchCondition = {
+  id: string;
+  user_id: string;
+  keyword: string;
+  min_profit: number;
+  sources: ("mercari" | "yahuoku")[];
+  category: Category;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type FoundItem = {
+  id: string;
+  condition_id: string;
+  user_id: string;
+  source: "mercari" | "yahuoku";
+  item_title: string;
+  item_url: string;
+  item_price: number;
+  amazon_title: string | null;
+  amazon_asin: string | null;
+  amazon_price: number | null;
+  estimated_profit: number;
+  found_at: string;
+  notified_at: string | null;
+};

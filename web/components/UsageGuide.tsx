@@ -4,19 +4,19 @@ import { PLANS } from "@/lib/plans";
 
 const STEPS = [
   {
-    title: "AmazonのURLかASINを用意",
-    body: "Amazonの商品ページのURLを、そのまま貼れます。ASIN(URLの「/dp/」の後ろの10桁)でも構いません。",
-    example: "amazon.co.jp/dp/B0CPL68SZN → B0CPL68SZN",
+    title: "探したい商品のキーワードを決める",
+    body: "仕入れたい商品の名前や型番を、キーワードとして入力します。Amazonでも売れている、はっきりした商品名が向いています。",
+    example: "ポケモンカード BOX",
   },
   {
-    title: "同じ商品の楽天URLを貼る",
-    body: "仕入れ先になる、楽天市場の同じ商品のページのURLを貼り付けます。",
-    example: "https://item.rakuten.co.jp/shop/item/",
+    title: "最低純利益と仕入れ先を選ぶ",
+    body: "手数料を引いた後に、最低いくら残ってほしいかを円で入力し、探す場所(メルカリ・ヤフオク)とカテゴリを選びます。",
+    example: "最低純利益 1,000円 / メルカリ・ヤフオク",
   },
   {
-    title: "目標純利益を決めて登録",
-    body: "手数料を引いた後に、最低いくら残ってほしいかを円で入力し、カテゴリを選びます。",
-    example: "目標純利益 1,000円 / カテゴリ その他",
+    title: "毎朝のお知らせメールを待つ",
+    body: "毎朝、自動で探して、利益が出る商品が見つかると、1日1通のまとめメールでお知らせします。",
+    example: "【差益レーダー】今日のお宝3件",
   },
 ];
 
@@ -44,19 +44,23 @@ export function GuideHow() {
     <ul className="space-y-2 text-sm leading-relaxed text-slate-300">
       <li>
         <span className="mr-1 text-brand-400">●</span>
-        登録した商品は、<strong className="text-white">毎朝6時ごろ</strong>に、Amazonの販売価格と楽天の仕入れ価格を自動でチェックします。
+        登録した条件は、<strong className="text-white">毎朝</strong>、メルカリ・ヤフオクで自動で探し、商品名からAmazonの価格を調べて、純利益を計算します。
       </li>
       <li>
         <span className="mr-1 text-brand-400">●</span>
-        手数料を引いた<strong className="text-white">純利益が目標以上</strong>になると、登録したメールアドレスにお知らせが届きます(同じ状態が続く間は、毎日は送りません)。
+        手数料を引いた<strong className="text-white">純利益が、最低純利益以上</strong>になる商品が見つかると、登録したメールアドレスに、1日1通のまとめメールでお知らせします。
       </li>
       <li>
         <span className="mr-1 text-brand-400">●</span>
-        価格はダッシュボードのカードにも表示されます。登録直後は、次回のチェック後に数字が入ります。
+        見つかった商品は、ダッシュボードの「今日見つかったお宝リスト」にも並びます。登録直後は、次回の自動検索の後に表示されます。
       </li>
       <li>
         <span className="mr-1 text-brand-400">●</span>
-        無料プランでは、最大{PLANS.free.limit}商品まで登録できます。
+        無料プランでは、最大{PLANS.free.limit}件の条件を登録できます。
+      </li>
+      <li>
+        <span className="mr-1 text-brand-400">●</span>
+        Amazonの価格は、検索結果から推定した目安です。仕入れる前に、同じ商品か(型番・状態・セット内容)を、必ずご自身で確認してください。
       </li>
     </ul>
   );
@@ -66,7 +70,7 @@ export function GuideFormula() {
   return (
     <div className="space-y-4 text-sm">
       <p className="rounded-lg bg-black/30 px-4 py-3 font-num leading-relaxed text-brand-300">
-        純利益 = Amazon価格 − 楽天価格 − (Amazon価格 × 手数料率 + 500円)
+        純利益 = Amazon価格 − 仕入れ価格 − (Amazon価格 × 手数料率 + 500円)
       </p>
       <p className="text-xs leading-relaxed text-slate-400">
         手数料率はカテゴリごとに決まります(ゲーム・家電 8% / 衣類・シューズ 15% / その他 10%)。500円は、配送・出荷にかかる費用の目安です。
@@ -82,7 +86,7 @@ export function GuideFormula() {
               <td className="px-4 py-2 text-right font-num">¥9,980</td>
             </tr>
             <tr>
-              <th className="px-4 py-2 font-medium text-slate-400">楽天価格(仕入れ値)</th>
+              <th className="px-4 py-2 font-medium text-slate-400">仕入れ価格(メルカリ・ヤフオク)</th>
               <td className="px-4 py-2 text-right font-num">¥5,680</td>
             </tr>
             <tr>

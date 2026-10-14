@@ -24,7 +24,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
   if (!user) redirect("/login");
 
   const info = await getPlanInfo(supabase, user.id);
-  const { count } = await supabase.from("monitored_products").select("id", { count: "exact", head: true });
+  const { count } = await supabase.from("watch_conditions").select("id", { count: "exact", head: true });
   const used = count ?? 0;
   const ready = billingConfigured(); // 契約済みのお客様のポータル用
   const salesOpen = paidSalesEnabled(); // 新規の申し込み用
@@ -70,7 +70,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
           <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-2xl font-black">{info.name}</span>
             <span className="text-sm text-slate-400">
-              監視中 <span className="font-num text-slate-100">{used}</span> / {info.limit} 商品
+              登録中の条件 <span className="font-num text-slate-100">{used}</span> / {info.limit} 件
             </span>
           </p>
           {sub && info.plan !== "free" && periodEnd && (
@@ -114,7 +114,7 @@ export default async function BillingPage({ searchParams }: { searchParams: { st
                     <span className="font-num text-3xl font-black">{yen(p.price)}</span>
                     {p.price > 0 && <span className="text-xs text-slate-400">/月(税込)</span>}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-brand-300">監視 {p.limit}商品まで</p>
+                  <p className="mt-1 text-sm font-bold text-brand-300">条件 {p.limit}件まで</p>
                   <ul className="mt-4 flex-1 space-y-1.5 text-xs text-slate-300">
                     {p.features.map((f) => (
                       <li key={f} className="flex gap-2">

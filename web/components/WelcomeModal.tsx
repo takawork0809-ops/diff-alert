@@ -52,7 +52,7 @@ export default function WelcomeModal() {
           差益レーダーへようこそ
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-300">
-          Amazonで売れる価格と、楽天で仕入れられる価格の差を毎朝チェックして、利益が出るタイミングをメールでお知らせします。使い方は3ステップです。
+          キーワードを登録すると、毎朝メルカリ・ヤフオクを自動で探して、Amazonで売ったときに利益が出る商品をメールでお知らせします。使い方は3ステップです。
         </p>
 
         <div className="mt-5">

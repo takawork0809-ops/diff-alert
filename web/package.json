@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tests/bulk-parse.test.mjs tests/search-keyword.test.mjs tests/bookmarklet.test.mjs"
+    "test": "node --test tests/bulk-parse.test.mjs tests/search-keyword.test.mjs tests/bookmarklet.test.mjs tests/watch-conditions.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

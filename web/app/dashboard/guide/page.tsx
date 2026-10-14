@@ -37,17 +37,17 @@ export default async function GuidePage() {
         <div>
           <h1 className="text-2xl font-black">使い方</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            差益レーダーは、Amazonで売れる価格と、楽天で仕入れられる価格の差を毎朝チェックして、手数料を引いても利益が出るタイミングをメールでお知らせするサービスです。
+            差益レーダーは、キーワードと最低純利益を登録しておくと、毎朝メルカリ・ヤフオクを自動で探し、Amazonで売ったときに手数料を引いても利益が出る商品を、メールでお知らせするサービスです。
           </p>
         </div>
 
         <section className="card p-5 sm:p-6">
-          <h2 className="text-base font-black">商品を登録する(3ステップ)</h2>
+          <h2 className="text-base font-black">条件を登録する(3ステップ)</h2>
           <div className="mt-4">
             <GuideSteps />
           </div>
           <p className="mt-4 text-xs leading-relaxed text-slate-400">
-            ASINが分からないときは、Amazonの商品ページの「登録情報」(商品の詳細)にも、ASINが載っています。同じ商品かどうか(型番・色・容量・セット数)は、必ず両方のページで見比べてください。
+            ヤフオクは、「即決価格」がある出品だけが対象です。Amazonの価格は、商品名から検索して推定した目安なので、同じ商品かどうか(型番・色・容量・セット数・状態)は、必ず両方のページで見比べてください。
           </p>
         </section>
 
@@ -69,21 +69,21 @@ export default async function GuidePage() {
           <h2 className="text-base font-black">画面の見方</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
-              <dt className="font-bold">仕入れチャンス</dt>
+              <dt className="font-bold">今日見つかったお宝リスト</dt>
               <dd className="mt-0.5 text-xs leading-relaxed text-slate-400">
-                純利益が目標以上になっている商品の数です。カードには「✅ チャンスあり」と表示されます。目標に届いていない商品は「❌ 待機中」、まだ価格を取得していない商品は「⏳ 未チェック」です。
+                直近7日に見つかった商品を、純利益の高い順に並べています。「仕入れ価格」は、メルカリ・ヤフオクの価格(ヤフオクは即決価格)、「Amazon推定」は、商品名から探したAmazonの価格です。
               </dd>
             </div>
             <div>
-              <dt className="font-bold">「⏳ 未チェック」のカード(価格が「—」)</dt>
+              <dt className="font-bold">探索中 / 停止中</dt>
               <dd className="mt-0.5 text-xs leading-relaxed text-slate-400">
-                まだ価格を取得していません。登録の翌朝までに、自動でチェックされます。
+                「探索中」の条件だけが、毎朝の自動検索の対象です。一時的にお休みしたいときは「一時停止」を押してください。
               </dd>
             </div>
             <div>
-              <dt className="font-bold">価格が更新されないとき</dt>
+              <dt className="font-bold">お宝が見つからないとき</dt>
               <dd className="mt-0.5 text-xs leading-relaxed text-slate-400">
-                ページの構成が変わった、在庫切れ、ASINやURLの入力ミスが考えられます。一度削除して、入力し直してみてください。
+                最低純利益が高すぎる、キーワードが曖昧(「まとめ売り」など)、Amazonで同じ商品が見つからない、などが考えられます。キーワードを、型番や正式な商品名に近づけて、登録し直してみてください。
               </dd>
             </div>
           </dl>
@@ -91,7 +91,7 @@ export default async function GuidePage() {
 
         <div className="pb-8 text-center">
           <Link href="/dashboard" className="btn-primary">
-            ダッシュボードで商品を登録する
+            ダッシュボードで条件を登録する
           </Link>
         </div>
       </main>
