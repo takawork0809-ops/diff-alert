@@ -7,21 +7,6 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   other: "その他 (手数料10%)",
 };
 
-export type MonitoredProduct = {
-  id: string;
-  user_id: string;
-  asin: string;
-  rakuten_url: string;
-  category: Category;
-  target_margin: number;
-  product_name: string | null;
-  last_amazon_price: number | null;
-  last_rakuten_price: number | null;
-  last_net_margin: number | null;
-  last_checked_at: string | null;
-  created_at: string;
-};
-
 export type WatchCondition = {
   id: string;
   user_id: string;
