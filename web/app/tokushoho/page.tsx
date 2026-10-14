@@ -13,9 +13,9 @@ const rows: [string, React.ReactNode][] = [
   [
     "販売価格",
     <ul key="price" className="space-y-1">
-      <li>{PLANS.free.name}: {yen(PLANS.free.price)}(監視 {PLANS.free.limit} 商品まで)</li>
-      <li>{PLANS.standard.name}: 月額 {yen(PLANS.standard.price)}(税込)(監視 {PLANS.standard.limit} 商品まで)</li>
-      <li>{PLANS.pro.name}: 月額 {yen(PLANS.pro.price)}(税込)(監視 {PLANS.pro.limit} 商品まで)</li>
+      <li>{PLANS.free.name}: {yen(PLANS.free.price)}(条件 {PLANS.free.limit} 件まで)</li>
+      <li>{PLANS.standard.name}: 月額 {yen(PLANS.standard.price)}(税込)(条件 {PLANS.standard.limit} 件まで)</li>
+      <li>{PLANS.pro.name}: 月額 {yen(PLANS.pro.price)}(税込)(条件 {PLANS.pro.limit} 件まで)</li>
     </ul>,
   ],
   ["商品代金以外の必要料金", "なし。ただし、本サービスの利用にかかるインターネット接続料金や通信料金は、お客様のご負担となります。"],

@@ -7,50 +7,50 @@ import SiteFooter from "@/components/SiteFooter";
 const problems = [
   {
     icon: "🔍",
-    title: "Keepaだけでは仕入れ価格がわからない",
-    body: "Amazonの価格推移は見えても、楽天でいくらで仕入れられるかは別画面。毎回2つのサイトを行き来していませんか？",
+    title: "仕入れ先を探すだけで、時間が過ぎる",
+    body: "メルカリやヤフオクを開いて、Amazonの価格と1件ずつ見比べる。商品が増えるほど、時間がかかりませんか？",
   },
   {
     icon: "👀",
     title: "手動チェックでは見逃しが出る",
-    body: "商品が増えるほど、全部を毎日見るのは不可能に。チャンスは気づかないうちに通り過ぎていきます。",
+    body: "出品は、毎日入れ替わります。キーワードが増えるほど、全部を毎日見るのは不可能に。チャンスは気づかないうちに通り過ぎていきます。",
   },
   {
     icon: "⏰",
-    title: "セール終了後に気づいても手遅れ",
-    body: "楽天のセールやポイント倍率は一瞬。気づいたときには、利益の出る価格はもう戻りません。",
+    title: "気づいたときには、もう売れている",
+    body: "相場より安い出品は、すぐに買われてしまいます。毎朝の自動チェックで、見つけやすくします。",
   },
 ];
 
 const steps = [
   {
     n: "01",
-    title: "商品を登録",
-    body: "監視したい商品のASINと楽天URLを登録します。目標の純利益も設定できます。",
+    title: "探したい条件を登録",
+    body: "探したい商品のキーワードと、最低いくら利益が残ってほしいかを登録します。探す場所(メルカリ・ヤフオク)も選べます。",
   },
   {
     n: "02",
-    title: "毎朝、自動で価格を取得",
-    body: "Amazon×楽天の最新価格を毎朝自動で取得。あなたが寝ている間に監視が終わります。",
+    title: "毎朝、自動で探して照合",
+    body: "メルカリ・ヤフオクを自動で検索し、Amazonの価格と比べて、純利益を計算します。あなたが寝ている間に終わります。",
   },
   {
     n: "03",
-    title: "プラスになったらメール通知",
-    body: "手数料込みの純利益が目標を超えた商品だけを、すぐにメールでお知らせします。",
+    title: "お宝は、まとめてメールで",
+    body: "手数料込みの純利益が、最低純利益を超えた商品だけを、1日1通のまとめメールでお知らせします。",
   },
 ];
 
 const compare = [
-  { label: "見られる価格", keepa: "Amazon内の価格履歴のみ", ours: "Amazon販売価格 vs 楽天仕入れ価格を連動" },
+  { label: "見られる価格", keepa: "Amazon内の価格履歴のみ", ours: "メルカリ・ヤフオクの出品価格 vs Amazon価格を照合" },
   { label: "利益の計算", keepa: "手数料計算なし", ours: "FBA手数料・Amazon手数料込みの純利益を計算" },
-  { label: "チャンスの発見", keepa: "自分でグラフを見て判断", ours: "目標を超えた瞬間にメール通知" },
+  { label: "チャンスの発見", keepa: "自分でグラフを見て判断", ours: "条件に合う商品だけを、まとめメールで通知" },
 ];
 
 const plans = [PLANS.free, PLANS.standard, PLANS.pro].map((p) => ({
   name: p.name,
   price: yen(p.price),
   per: p.price > 0 ? "/月(税込)" : "",
-  items: `監視 ${p.limit}商品まで`,
+  items: `条件 ${p.limit}件まで`,
   features: p.features,
   cta: "無料で始める",
   highlight: p.id === "standard",
@@ -92,9 +92,9 @@ export default function Home() {
               <span className="bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent">見逃すな。</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-              Amazon×楽天の差益をリアルタイム監視。
+              メルカリ・ヤフオクで、Amazonより安く仕入れられる商品を、毎朝自動で探索。
               <br className="hidden sm:block" />
-              純利益がプラスになった瞬間、即メール通知。
+              純利益が出る商品だけを、まとめてメールでお知らせ。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href="/signup" className="btn-primary px-8 py-4 text-lg">
@@ -104,7 +104,7 @@ export default function Home() {
                 仕組みを見る ↓
               </a>
             </div>
-            <p className="mt-4 text-xs text-slate-500">クレジットカード不要 ・ 監視3商品まで無料</p>
+            <p className="mt-4 text-xs text-slate-500">クレジットカード不要 ・ 条件3件まで無料</p>
           </div>
 
           {/* Mock card */}
@@ -112,31 +112,31 @@ export default function Home() {
             <div className="card animate-floaty p-5 shadow-2xl shadow-black/40 sm:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-slate-400">Fire TV Stick 4K Max 第2世代</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">ASIN B0G2TXBSWJ ・ 毎朝6:00 更新</p>
+                  <p className="text-xs text-slate-400">ポケモンカード 拡張パック 新品未開封(例)</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">ヤフオク ・ 即決価格 ・ 毎朝 自動検索</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-brand-500/15 px-3 py-1 text-xs font-bold text-brand-300">✅ チャンスあり</span>
+                <span className="shrink-0 rounded-full bg-brand-500/15 px-3 py-1 text-xs font-bold text-brand-300">✅ お宝発見</span>
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-navy-800/80 p-3">
-                  <p className="text-[11px] text-slate-400">Amazon販売価格</p>
+                  <p className="text-[11px] text-slate-400">Amazon推定価格</p>
                   <p className="mt-1 font-num text-xl font-extrabold">
-                    <CountUp value={15980} prefix="¥" />
+                    <CountUp value={12830} prefix="¥" />
                   </p>
                 </div>
                 <div className="rounded-xl bg-navy-800/80 p-3">
-                  <p className="text-[11px] text-slate-400">楽天仕入れ価格</p>
+                  <p className="text-[11px] text-slate-400">仕入れ価格(ヤフオク)</p>
                   <p className="mt-1 font-num text-xl font-extrabold">
-                    <CountUp value={12320} prefix="¥" />
+                    <CountUp value={10000} prefix="¥" />
                   </p>
                 </div>
               </div>
               <div className="mt-3 rounded-xl border border-brand-500/30 bg-brand-500/10 p-4">
                 <p className="text-[11px] text-brand-300">手数料込みの純利益</p>
                 <p className="mt-1 font-num text-4xl font-black text-brand-400">
-                  <CountUp value={1882} prefix="+¥" />
+                  <CountUp value={1047} prefix="+¥" />
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400">Amazon手数料8% + FBA手数料¥500を差し引いた金額</p>
+                <p className="mt-1 text-[11px] text-slate-400">Amazon手数料10% + FBA手数料¥500を差し引いた金額</p>
               </div>
             </div>
             <p className="mt-3 text-center text-[11px] text-slate-500">※表示は画面イメージです</p>
@@ -164,7 +164,7 @@ export default function Home() {
       <section id="how" className="py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <p className="text-center text-sm font-bold text-brand-400">HOW IT WORKS</p>
-          <h2 className="mt-2 text-center text-2xl font-black sm:text-3xl">3ステップで、監視は自動化</h2>
+          <h2 className="mt-2 text-center text-2xl font-black sm:text-3xl">3ステップで、仕入れ探しは自動化</h2>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {steps.map((s) => (
               <div key={s.n} className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-navy-800/70 to-navy-900/70 p-6">
@@ -249,7 +249,7 @@ export default function Home() {
         <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl border border-brand-500/30 bg-gradient-to-br from-navy-800 to-navy-900 p-10 text-center sm:p-14">
           <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand-500/20 blur-3xl" />
           <h2 className="relative text-2xl font-black sm:text-4xl">明日の朝には、最初のチャンスが届くかもしれません。</h2>
-          <p className="relative mt-4 text-slate-300">登録は30秒。まずは3商品、無料で監視を始めましょう。</p>
+          <p className="relative mt-4 text-slate-300">登録は30秒。まずは3件の条件を、無料で登録してみましょう。</p>
           <Link href="/signup" className="btn-primary relative mt-8 px-10 py-4 text-lg">
             今すぐ無料で始める
           </Link>

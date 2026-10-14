@@ -15,7 +15,7 @@ export default function TermsPage() {
 
       <H2>第1条(本サービスの内容)</H2>
       <p>
-        本サービスは、ユーザーが登録した商品について、Amazonの販売価格と、楽天市場の価格を定期的に取得し、手数料などを考慮した利益の目安を計算して、画面やメールでお知らせするサービスです。
+        本サービスは、ユーザーが登録した条件(キーワードなど)をもとに、メルカリ・ヤフオク!の出品を定期的に検索し、Amazonの価格と照合して、手数料などを考慮した利益の目安を計算して、画面やメールでお知らせするサービスです。Amazonの価格は、検索結果から推定した目安であり、出品されている商品との同一性を保証するものではありません。
       </p>
 
       <H2>第2条(利用登録)</H2>
@@ -37,9 +37,9 @@ export default function TermsPage() {
         <li>
           本サービスには、無料プランと、有料プランがあります。料金と内容は、次のとおりです(税込)。
           <UL>
-            <li>{PLANS.free.name}: {yen(PLANS.free.price)}(監視 {PLANS.free.limit} 商品まで)</li>
-            <li>{PLANS.standard.name}: 月額 {yen(PLANS.standard.price)}(監視 {PLANS.standard.limit} 商品まで)</li>
-            <li>{PLANS.pro.name}: 月額 {yen(PLANS.pro.price)}(監視 {PLANS.pro.limit} 商品まで)</li>
+            <li>{PLANS.free.name}: {yen(PLANS.free.price)}(条件 {PLANS.free.limit} 件まで)</li>
+            <li>{PLANS.standard.name}: 月額 {yen(PLANS.standard.price)}(条件 {PLANS.standard.limit} 件まで)</li>
+            <li>{PLANS.pro.name}: 月額 {yen(PLANS.pro.price)}(条件 {PLANS.pro.limit} 件まで)</li>
           </UL>
         </li>
         <li>有料プランの料金は、クレジットカードで、毎月、お申し込みと同じ日に、自動で請求されます。決済は、Stripe, Inc.のサービスを通じて行われます。</li>
@@ -72,8 +72,8 @@ export default function TermsPage() {
         <li>
           ユーザーは、商品の仕入れや販売を行う際に、必ず、最新の情報を、ご自身で、確認してください。仕入れや販売の判断と、その結果(損失を含みます)は、ユーザーの責任とし、本サービスが利益を保証するものではありません。
         </li>
-        <li>ユーザーは、Amazon、楽天市場、その他の関係するサービスの、利用規約や関連する法令を、守って、仕入れや販売を行うものとします。</li>
-        <li>本サービスは、Amazon、楽天グループ、その他の企業と、提携または関係があるものではありません。</li>
+        <li>ユーザーは、Amazon、メルカリ、ヤフオク!、楽天市場、その他の関係するサービスの、利用規約や関連する法令を、守って、仕入れや販売を行うものとします。</li>
+        <li>本サービスは、Amazon、メルカリ、LINEヤフー、楽天グループ、その他の企業と、提携または関係があるものではありません。</li>
       </OL>
 
       <H2>第7条(本サービスの変更・中断・終了)</H2>

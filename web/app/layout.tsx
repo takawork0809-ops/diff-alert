@@ -18,7 +18,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "差益レーダー | 仕入れチャンスを、見逃すな。",
   description:
-    "Amazon×楽天の差益を毎朝自動監視。手数料込みの純利益がプラスになった瞬間、メールでお知らせ。",
+    "メルカリ・ヤフオクの出品をAmazon価格と照合して、毎朝自動で探索。手数料込みの純利益が出る商品を、まとめメールでお知らせ。",
 };
 
 export default function RootLayout({
