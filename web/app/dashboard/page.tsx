@@ -20,25 +20,23 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data, error } = await supabase
-    .from("watch_conditions")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // 3つの読み込みは、互いに待たなくてよいので、同時に行う(画面の表示が早くなる)
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(); // 直近7日分
+  const [{ data, error }, { data: foundData }, plan] = await Promise.all([
+    supabase.from("watch_conditions").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("found_items")
+      .select("*")
+      .gte("found_at", since)
+      .order("estimated_profit", { ascending: false })
+      .limit(50),
+    getPlanInfo(supabase, user.id),
+  ]);
   const conditions = (data ?? []) as WatchCondition[];
   const tableMissing = !!error && error.message.includes("schema cache");
-
-  // 直近7日に見つかった商品を、純利益の高い順に表示する
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: foundData } = await supabase
-    .from("found_items")
-    .select("*")
-    .gte("found_at", since)
-    .order("estimated_profit", { ascending: false })
-    .limit(50);
   const found = (foundData ?? []) as FoundItem[];
   const keywordById = Object.fromEntries(conditions.map((c) => [c.id, c.keyword]));
 
-  const plan = await getPlanInfo(supabase, user.id);
   const full = conditions.length >= plan.limit;
 
   return (
