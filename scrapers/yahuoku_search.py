@@ -9,7 +9,6 @@
 import asyncio
 import json
 import sys
-import time
 from urllib.parse import quote
 
 from playwright.async_api import Browser, async_playwright
@@ -17,19 +16,10 @@ from playwright.async_api import Browser, async_playwright
 from scrapers.common import fetch_page
 
 SEARCH_URL = "https://auctions.yahoo.co.jp/search/search?p={kw}&va={kw}&buynow=1"
+ITEM_URL = "https://auctions.yahoo.co.jp/jp/auction/{id}"
 
-_EXTRACT_JS = """() => [...document.querySelectorAll('li.Product')].map(li => {
-  const link = li.querySelector('a.Product__titleLink');
-  const bonus = li.querySelector('.Product__bonus');
-  return {
-    id: bonus && bonus.dataset.auctionId,
-    title: link && link.dataset.auctionTitle,
-    url: link && link.href,
-    price: bonus && bonus.dataset.auctionPrice,
-    buynow: bonus && bonus.dataset.auctionBuynowprice,
-    end: bonus && bonus.dataset.auctionEndtime,
-  };
-})"""
+# 2026年10月以降の画面は、ページ内のデータ(__NEXT_DATA__)に検索結果が入っている。見た目のHTMLより変更に強い。
+_NEXT_DATA_JS = "(() => { const e = document.getElementById('__NEXT_DATA__'); return e ? e.textContent : null; })()"
 
 
 def _to_int(v) -> int:
@@ -39,8 +29,8 @@ def _to_int(v) -> int:
         return 0
 
 
-def _remaining(end_ts: int) -> str:
-    sec = end_ts - int(time.time())
+def _remaining(left_seconds: float) -> str:
+    sec = int(left_seconds)
     if sec <= 0:
         return "終了"
     if sec >= 86400:
@@ -50,23 +40,33 @@ def _remaining(end_ts: int) -> str:
     return f"{max(sec // 60, 1)}分"
 
 
+def _listing_items(raw: str) -> list:
+    """__NEXT_DATA__ から検索結果の一覧を取り出す。構造が変わっていたら例外にして、呼び出し側に警告させる。"""
+    try:
+        data = json.loads(raw)
+        return data["props"]["pageProps"]["initialState"]["search"]["items"]["listing"]["items"]
+    except (KeyError, TypeError, ValueError) as e:
+        raise RuntimeError(f"ヤフオクの検索結果の形式が変わった可能性があります: {e!r}")
+
+
 async def search_yahuoku(browser: Browser, keyword: str, limit: int = 30) -> list:
     """戻り値: [{source, title, url, price(=即決価格), current_price, remaining, in_stock}]。"""
-    async with fetch_page(browser, SEARCH_URL.format(kw=quote(keyword)), "li.Product") as page:
-        rows = await page.evaluate(_EXTRACT_JS)
+    async with fetch_page(browser, SEARCH_URL.format(kw=quote(keyword)), "a[href*='/jp/auction/']") as page:
+        raw = await page.evaluate(_NEXT_DATA_JS)
+    if not raw:
+        raise RuntimeError("ヤフオクの検索結果ページを読み込めませんでした(__NEXT_DATA__ がありません)")
 
     items = []
-    for r in rows:
-        buynow = _to_int(r.get("buynow"))
-        end_ts = _to_int(r.get("end"))
-        if not r.get("title") or not r.get("url") or buynow <= 0:
+    for r in _listing_items(raw):
+        buynow = _to_int(r.get("buyNowPrice"))
+        remaining = _remaining(r.get("leftTime") or 0)
+        if not r.get("title") or not r.get("auctionId") or buynow <= 0:
             continue
-        remaining = _remaining(end_ts)
         items.append(
             {
                 "source": "yahuoku",
                 "title": r["title"].strip(),
-                "url": r["url"].split("?")[0],
+                "url": ITEM_URL.format(id=r["auctionId"]),
                 "price": buynow,
                 "current_price": _to_int(r.get("price")),
                 "remaining": remaining,
