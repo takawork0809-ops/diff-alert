@@ -16,7 +16,7 @@ from typing import Optional
 import resend
 from dotenv import load_dotenv
 
-from main import get_supabase_client
+from main import ALERT_EMAIL_TO, get_supabase_client
 
 load_dotenv()
 
@@ -51,10 +51,39 @@ def build_message(items: list) -> tuple:
         lines.append(f"(ほか{len(items) - len(shown)}件は、ダッシュボードでご確認ください)")
         lines.append("")
     lines += [
+        "※ メルカリ・ヤフオクの商品は、売り切れ・終了している場合があります。お早めにご確認ください。",
         "※ Amazonの価格は検索結果から推定した目安です。同じ商品か(型番・状態・セット内容)は、必ずご自身で確認してください。",
         "※ 一覧はダッシュボードでも見られます: https://sagakuradar.com/dashboard",
     ]
     return f"【差益レーダー】今日のお宝{len(items)}件", "\n".join(lines)
+
+
+def send_ops_alert(problems: list) -> bool:
+    """スカウトの異常を、運営者(あなた)に知らせる。送れたら True。ユーザー宛てのメールとは別。"""
+    api_key = os.environ.get("RESEND_API_KEY")
+    if not api_key:
+        print("[WARN] RESEND_API_KEY が未設定のため、警告メールを送れません。", file=sys.stderr)
+        return False
+    resend.api_key = api_key
+    to = os.environ.get("OPS_ALERT_EMAIL") or ALERT_EMAIL_TO
+    body = "\n".join(
+        ["自動スカウト(scout.py)の実行中に、次の問題が見つかりました。", ""]
+        + [f"・{p}" for p in problems]
+        + ["", "詳しくは、Macの logs/daily.log の末尾(scout.py の部分)を確認してください。"]
+    )
+    try:
+        resend.Emails.send(
+            {
+                "from": os.environ.get("RESEND_FROM_EMAIL", FROM_EMAIL_DEFAULT),
+                "to": [to],
+                "subject": "【差益レーダー】スカウトに問題があります",
+                "text": body,
+            }
+        )
+        return True
+    except Exception as e:
+        print(f"[WARN] 警告メールの送信に失敗しました: {e}", file=sys.stderr)
+        return False
 
 
 def notify_all(client, dry_run: bool = False) -> None:

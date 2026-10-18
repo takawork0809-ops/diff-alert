@@ -15,6 +15,8 @@ Amazon価格と照合して純利益が条件以上の商品を found_items に�
 
 import argparse
 import asyncio
+import json
+import os
 import re
 import sys
 import unicodedata
@@ -42,6 +44,9 @@ MAX_ITEMS_PER_SOURCE = 12   # 1条件・1仕入れ先あたり、Amazon照合ま
 MIN_SIMILARITY = 0.6        # 商品名の一致度がこれ未満なら「別の商品」とみなして捨てる
 MAX_PRICE_RATIO = 3.0       # Amazon価格が仕入れ価格のこの倍率を超えたら、取り違え(別の商品・まとめ売りなど)とみなして捨てる
 AMAZON_QUERY_MAX_CHARS = 60
+STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs", "scout_state.json")
+ZERO_STREAK_ALERT_AT = 3     # 同じ仕入れ先が、この回数つづけて0件なら、警告する(その後は7回ごと)
+MIN_AMAZON_QUERIES_FOR_ALERT = 3  # Amazon検索が全て空だったときに警告するための、最低の検索回数
 
 _NOISE = re.compile(
     r"【[^】]*】|\[[^\]]*\]|\([^)]*\)|送料無料|新品|未使用|未開封|中古|美品|即決|匿名配送|早い者勝ち|プロフ必読|おまけ|激レア|超希少"
@@ -82,20 +87,31 @@ def quantity_mismatch(a: str, b: str) -> bool:
     return any(unit in qb and qb[unit] != n for unit, n in qa.items())
 
 
+SIMILARITY_BAND = 0.1  # 最も似ている商品との差が、この範囲内なら「同じ商品の別の出品」とみなす
+
+
 def best_amazon_match(item_title: str, candidates: list) -> Optional[dict]:
-    best, best_score = None, 0.0
+    """似ている商品のうち、最も安い出品を選ぶ。
+
+    転売の出品者の強気な価格を「売れる価格」と見ると、利益を実際より大きく見積もってしまう。
+    同じ商品の出品が複数あるときは、最も安いものを基準にして、見積もりを現実に近づける。
+    """
+    scored = []
     for c in candidates:
         if quantity_mismatch(item_title, c["title"]):
             continue
-        score = similarity(item_title, c["title"])
-        if score > best_score:
-            best, best_score = c, score
-    if best is None or best_score < MIN_SIMILARITY:
+        scored.append((similarity(item_title, c["title"]), c))
+    if not scored:
         return None
-    return {**best, "similarity": best_score}
+    top = max(score for score, _ in scored)
+    if top < MIN_SIMILARITY:
+        return None
+    same = [(score, c) for score, c in scored if score >= max(MIN_SIMILARITY, top - SIMILARITY_BAND)]
+    score, cheapest = min(same, key=lambda sc: sc[1]["price"])
+    return {**cheapest, "similarity": score}
 
 
-async def scout_condition(browser, cond: dict, amazon_cache: dict) -> list:
+async def scout_condition(browser, cond: dict, amazon_cache: dict, stats: dict) -> list:
     """1つの条件について、基準を満たす商品のリストを返す。"""
     found = []
     for source in cond["sources"]:
@@ -106,7 +122,9 @@ async def scout_condition(browser, cond: dict, amazon_cache: dict) -> list:
             items = await searcher(browser, cond["keyword"], limit=MAX_ITEMS_PER_SOURCE)
         except Exception as e:
             print(f"  [WARN] {SOURCE_LABELS.get(source, source)}の検索に失敗: {e}", file=sys.stderr)
+            stats["errors"].append(f"{SOURCE_LABELS.get(source, source)}の検索に失敗しました(条件「{cond['keyword']}」): {e}")
             continue
+        stats["fetched"][source] = stats["fetched"].get(source, 0) + len(items)
         print(f"  {SOURCE_LABELS[source]}: {len(items)}件取得")
         await polite_sleep()
 
@@ -115,11 +133,15 @@ async def scout_condition(browser, cond: dict, amazon_cache: dict) -> list:
                 continue
             query = amazon_query(item["title"])
             if query not in amazon_cache:
+                stats["amazon_queries"] += 1
                 try:
                     amazon_cache[query] = await search_amazon(browser, query)
                 except Exception as e:
                     print(f"  [WARN] Amazon検索に失敗({query[:20]}…): {e}", file=sys.stderr)
                     amazon_cache[query] = []
+                    stats["errors"].append(f"Amazonの検索に失敗しました({query[:20]}…): {e}")
+                if amazon_cache[query]:
+                    stats["amazon_nonempty"] += 1
                 await polite_sleep()
             match = best_amazon_match(item["title"], amazon_cache[query])
             if match is None:
@@ -181,14 +203,57 @@ def save_found(client, cond: dict, found: list) -> int:
     return len(res.data or [])
 
 
-async def run(conditions: list, client, headless: bool = True) -> None:
+def _load_state() -> dict:
+    try:
+        with open(STATE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_state(state: dict) -> None:
+    try:
+        os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
+        with open(STATE_PATH, "w", encoding="utf-8") as f:
+            json.dump(state, f)
+    except Exception as e:
+        print(f"[WARN] 状態ファイルを保存できませんでした: {e}", file=sys.stderr)
+
+
+def detect_problems(conditions: list, stats: dict, state: dict) -> list:
+    """今回の実行結果から、運営者に知らせるべき問題を洗い出す。state の連続0件の回数も更新する。"""
+    problems = list(dict.fromkeys(stats["errors"]))  # 重複を除く(順序は保つ)
+
+    used_sources = {s for c in conditions for s in c["sources"]}
+    streaks = state.setdefault("zero_streak", {})
+    for source in used_sources:
+        label = SOURCE_LABELS.get(source, source)
+        if source not in stats["fetched"]:
+            continue  # 検索そのものが失敗した(上のエラーで通知済み)。0件とは数えない
+        if stats["fetched"][source] == 0:
+            streaks[source] = streaks.get(source, 0) + 1
+            n = streaks[source]
+            if n == ZERO_STREAK_ALERT_AT or (n > ZERO_STREAK_ALERT_AT and n % 7 == 0):
+                problems.append(f"{label}の検索結果が、{n}回つづけて0件です(画面の変更やアクセス制限の可能性があります)")
+        else:
+            streaks[source] = 0
+
+    if stats["amazon_queries"] >= MIN_AMAZON_QUERIES_FOR_ALERT and stats["amazon_nonempty"] == 0:
+        problems.append(
+            f"Amazonの検索結果が、{stats['amazon_queries']}回すべて空でした(ボット対策で止められた可能性があります)"
+        )
+    return problems
+
+
+async def run(conditions: list, client, headless: bool = True) -> dict:
     amazon_cache: dict = {}
+    stats = {"fetched": {}, "errors": [], "amazon_queries": 0, "amazon_nonempty": 0}
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=headless)
         try:
             for i, cond in enumerate(conditions, 1):
                 print(f"[{i}/{len(conditions)}] 「{cond['keyword']}」 最低純利益¥{cond['min_profit']:,} {cond['sources']}")
-                found = await scout_condition(browser, cond, amazon_cache)
+                found = await scout_condition(browser, cond, amazon_cache, stats)
                 if client is not None:
                     saved = save_found(client, cond, found)
                     print(f"  → 基準を満たす{len(found)}件、新規保存{saved}件")
@@ -196,6 +261,23 @@ async def run(conditions: list, client, headless: bool = True) -> None:
                     print(f"  → 基準を満たす{len(found)}件(dry-run: 保存しません)")
         finally:
             await browser.close()
+    return stats
+
+
+def report_problems(conditions: list, stats: dict, send: bool) -> None:
+    state = _load_state()
+    problems = detect_problems(conditions, stats, state)
+    if send:
+        _save_state(state)  # dry-run では、連続0件の記録を進めない
+    if not problems:
+        return
+    print("[ALERT] 問題が見つかりました:", file=sys.stderr)
+    for pr in problems:
+        print(f"  - {pr}", file=sys.stderr)
+    if send:
+        from notify import send_ops_alert
+
+        send_ops_alert(problems)
 
 
 def main() -> None:
@@ -232,7 +314,17 @@ def main() -> None:
 
     if args.dry_run:
         client = None
-    asyncio.run(run(conditions, client, headless=not args.no_headless))
+    send_alerts = client is not None  # DBなしの試験実行(--keyword / --dry-run)では、警告メールを送らない
+    try:
+        stats = asyncio.run(run(conditions, client, headless=not args.no_headless))
+    except Exception as e:
+        print(f"[ERROR] scout.py が異常終了しました: {e!r}", file=sys.stderr)
+        if send_alerts:
+            from notify import send_ops_alert
+
+            send_ops_alert([f"scout.py が異常終了しました: {e!r}"])
+        raise
+    report_problems(conditions, stats, send=send_alerts)
 
     if client is not None and not args.no_notify:
         from notify import notify_all

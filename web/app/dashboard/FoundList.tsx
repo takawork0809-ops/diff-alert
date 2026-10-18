@@ -18,7 +18,7 @@ export default function FoundList({ items, conditionKeywords }: { items: FoundIt
     <section>
       <h2 className="mb-1 text-base font-black">今日見つかったお宝リスト</h2>
       <p className="mb-3 text-xs text-slate-500">
-        直近で見つかった商品を、純利益の高い順に表示します。Amazonの価格は、検索結果から推定した目安です。仕入れる前に、同じ商品か(型番・状態・セット内容)を必ず確認してください。
+        直近で見つかった商品を、純利益の高い順に表示します。メルカリ・ヤフオクの商品は、売り切れ・終了している場合があります。Amazonの価格は、検索結果から推定した目安です。仕入れる前に、同じ商品か(型番・状態・セット内容)を必ず確認してください。
       </p>
       {items.length === 0 ? (
         <div className="card p-8 text-center text-sm text-slate-400">

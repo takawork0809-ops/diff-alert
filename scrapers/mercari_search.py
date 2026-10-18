@@ -15,7 +15,8 @@ from playwright.async_api import Browser, async_playwright
 
 from scrapers.common import fetch_page
 
-SEARCH_URL = "https://jp.mercari.com/search?keyword={kw}&status=on_sale&sort=created_time&order=desc"
+# shipping_payer_id=2: 送料込み(出品者負担)だけ。着払い(購入者負担)は、送料の分だけ利益が減るのに計算に入らないため、除く。
+SEARCH_URL = "https://jp.mercari.com/search?keyword={kw}&status=on_sale&shipping_payer_id=2&sort=created_time&order=desc"
 BASE_URL = "https://jp.mercari.com"
 
 _EXTRACT_JS = """() => [...document.querySelectorAll('[data-testid="item-cell"]')].map(c => {
