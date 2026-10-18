@@ -5,5 +5,5 @@ export const LEGAL = {
   operator: "TAKA / SYSTEM DEVELOP", // Stripeに登録している屋号
   email: "taka.work0809@gmail.com",
   enacted: "2026年10月8日",
-  updated: "2026年10月8日",
+  updated: "2026年10月18日",
 } as const;

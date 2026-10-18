@@ -32,7 +32,7 @@ export default async function SignupPage() {
           </p>
           <AuthForm mode="signup" />
           <p className="mt-4 text-center text-xs text-slate-500">
-            クレジットカード不要 ・ 監視3商品まで無料
+            クレジットカード不要 ・ 条件3件まで無料
           </p>
           <p className="mt-2 text-center text-xs leading-relaxed text-slate-500">
             登録すると、
