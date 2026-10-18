@@ -60,7 +60,8 @@ async def search_yahuoku(browser: Browser, keyword: str, limit: int = 30) -> lis
     for r in _listing_items(raw):
         buynow = _to_int(r.get("buyNowPrice"))
         remaining = _remaining(r.get("leftTime") or 0)
-        if not r.get("title") or not r.get("auctionId") or buynow <= 0:
+        # 新品(NEW)だけ。中古(USED10〜USED80など)は、Amazonの新品の価格と比べると、利益を大きく見積もってしまう。
+        if not r.get("title") or not r.get("auctionId") or buynow <= 0 or r.get("itemCondition") != "NEW":
             continue
         items.append(
             {
